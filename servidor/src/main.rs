@@ -1,16 +1,20 @@
-use crate::server::Server;
-
 mod server_config;
 mod server;
+mod connection;
+mod utils;
 
+use crate::server::Server;
+use crate::server_config::ServerConfig;
 
 /*
     Punto de entrada del programa.
  */
 fn main() {
-    let address: [u8; 4] = [127, 0, 0, 1];
-    let port: u16 = 7878;
+    let config = ServerConfig::new();
 
-    let server: Server = Server::new(address, port);
+    let address: [u8; 4] = config.get_host();
+    let port: u16 = config.get_port();
+
+    let mut server: Server = Server::new(address, port);
     server.start().unwrap();
 }
