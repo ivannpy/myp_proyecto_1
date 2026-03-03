@@ -11,7 +11,11 @@ pub fn parse_msg_to_json(msg: &str) -> HashMap<String, String> {
                 Some(json_map) => {
                     let mut map: HashMap<String, String> = HashMap::new();
                     for (key, value) in json_map {
-                        map.insert(key.to_string(), value.to_string());
+                        let normalized = match value {
+                            Value::String(s) => s.clone(),
+                            _ => value.to_string(),
+                        };
+                        map.insert(key.to_string(), normalized);
                     }
                     map
                 },
