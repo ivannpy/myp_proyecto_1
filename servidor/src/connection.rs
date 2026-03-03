@@ -1,5 +1,6 @@
 use std::sync::mpsc;
 
+#[derive(Clone)]
 pub struct Connection {
     channel: mpsc::Sender<String>,
 }
@@ -7,7 +8,10 @@ pub struct Connection {
 impl Connection {
     pub fn new(channel: mpsc::Sender<String>) -> Self {
         Self {
-            channel,
+            channel
         }
+    }
+    pub fn send(&self, msg: String) {
+        let _ = self.channel.send(msg);
     }
 }
