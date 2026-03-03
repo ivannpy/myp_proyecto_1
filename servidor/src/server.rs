@@ -78,6 +78,7 @@ impl Server {
                             "Conexión establecida con nombre de usuario: {}\n",
                             username
                         );
+
                         conn.send(reply);
                     },
                     _ => {
@@ -106,6 +107,7 @@ impl Server {
         let mut write_socket = socket.try_clone().unwrap();
         thread::spawn(move || {
             while let Ok(msg) = rx.recv() {
+                println!(">>> {}", msg);
                 if write_socket.write_all(msg.as_bytes()).is_err() {
                     break;
                 }
@@ -115,6 +117,7 @@ impl Server {
         let mut buffer: [u8; 1024] = [0u8; 1024];
 
         loop {
+            // TODO: poder identificar que socket se cerró
             match socket.read(&mut buffer) {
                 Ok(0) => {
                     // Cerrar conexion
@@ -124,6 +127,7 @@ impl Server {
                 Ok(n) => {
                     let message = String::from_utf8_lossy(&buffer[..n]);
                     let data = parse_msg_to_json(&message);
+                    println!("<<< {:?}", message);
                     Self::handle_action(&state, &data, &conn);
                 },
                 Err(e) => {
