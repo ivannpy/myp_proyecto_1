@@ -57,7 +57,9 @@ impl Server {
 
     }
 
-
+    /*
+        Maneja una accion de un cliente.
+     */
     fn handle_action(state: &Arc<Mutex<ServerState>>,
                      data: &HashMap<String, String>,
                      conn: &Connection) {
@@ -67,17 +69,29 @@ impl Server {
                 let msg_type = msg_type.as_str();
                 match msg_type {
                     "IDENTIFY" => {
+                        let reply: String;
                         let username = data.get("username").unwrap().clone();
 
                         {
                             let mut locked = state.lock().unwrap();
-                            locked.connections.insert(username.clone(), conn.clone());
-                        }
+                            if locked.connections.contains_key(&username) {
+                                let mut reply_hashmap = HashMap::new();
+                                reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
+                                reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
+                                reply_hashmap.insert("result".to_string(), "USER_ALREADY_EXISTS".to_string());
+                                reply_hashmap.insert("extra".to_string(), username.clone());
 
-                        let reply = format!(
-                            "Conexión establecida con nombre de usuario: {}\n",
-                            username
-                        );
+                                reply = serde_json::to_string(&reply_hashmap).unwrap();
+                            } else{
+                                locked.connections.insert(username.clone(), conn.clone());
+                                let mut reply_hashmap = HashMap::new();
+                                reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
+                                reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
+                                reply_hashmap.insert("result".to_string(), "SUCCESS".to_string());
+                                reply_hashmap.insert("extra".to_string(), username.clone());
+                                reply = serde_json::to_string(&reply_hashmap).unwrap();
+                            }
+                        }
 
                         conn.send(reply);
                     },
@@ -92,7 +106,7 @@ impl Server {
     }
 
     /*
-        Maneja una conexion TCP entrante con ECHO.
+        Maneja una conexion TCP entrante
      */
     fn handle_connection(mut socket: TcpStream,
                          state: Arc<Mutex<ServerState>>) {
@@ -106,7 +120,8 @@ impl Server {
 
         let mut write_socket = socket.try_clone().unwrap();
         thread::spawn(move || {
-            while let Ok(msg) = rx.recv() {
+            while let Ok(mut msg) = rx.recv() {
+                msg.push('\n');
                 println!(">>> {}", msg);
                 if write_socket.write_all(msg.as_bytes()).is_err() {
                     break;
@@ -127,7 +142,7 @@ impl Server {
                 Ok(n) => {
                     let message = String::from_utf8_lossy(&buffer[..n]);
                     let data = parse_msg_to_json(&message);
-                    println!("<<< {:?}", message);
+                    println!("<<< {}", message);
                     Self::handle_action(&state, &data, &conn);
                 },
                 Err(e) => {
