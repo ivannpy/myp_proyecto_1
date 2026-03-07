@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::connection::Connection;
+use std::sync::mpsc;
 
 pub struct User {
     pub username: String,
@@ -7,5 +7,5 @@ pub struct User {
 }
 
 pub struct ServerState {
-    pub connections: HashMap<String, Connection>,
+    pub connections: HashMap<String, mpsc::Sender<String>>,
 }
