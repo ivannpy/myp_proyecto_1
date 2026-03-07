@@ -1,0 +1,41 @@
+name: Integración continua para el proyecto
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Pruebas unitarias, formato y clippy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar toolchain de Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Caché de dependencias
+        uses: Swatinem/rust-cache@v2
+
+      - name: Verificar formato
+        run: cargo fmt --all -- --check
+
+      - name: Ejecutar Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Ejecutar pruebas unitarias
+        run: cargo test --workspace --all-targets
+
+      - name: Compilar el proyecto
+        run: cargo check --workspace --all-targets
