@@ -1,11 +1,9 @@
 use crate::handlers::{handle_input_from_client, handle_output_to_client};
 use crate::model::ServerState;
-use std::collections::HashMap;
 use std::io::{BufReader, BufWriter};
 use std::net::{SocketAddr, TcpListener};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
-use std::sync::atomic::AtomicUsize;
 
 pub struct Server {
     pub listener: TcpListener,
