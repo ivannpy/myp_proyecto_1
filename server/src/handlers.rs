@@ -21,7 +21,7 @@ pub fn handle_input_from_client(
                 let msg = line.trim();
                 println!("<<< {}", msg);
                 let data = parse_msg_to_json(msg);
-                handle_action(&state, &data, &sender)
+                handle_message(&state, &data, &sender)
             }
             Err(e) => {
                 eprintln!(
@@ -50,7 +50,7 @@ pub fn handle_output_to_client(mut writer: BufWriter<TcpStream>, receiver: mpsc:
 /*
    Maneja una accion de un cliente.
 */
-fn handle_action(
+fn handle_message(
     state: &Arc<Mutex<ServerState>>,
     data: &HashMap<String, String>,
     sender: &mpsc::Sender<String>,
@@ -65,8 +65,8 @@ fn handle_action(
                     let username = data.get("username").unwrap().clone();
 
                     {
-                        let mut locked = state.lock().unwrap();
-                        if locked.users.contains_key(&username) {
+                        let mut locked_state = state.lock().unwrap();
+                        if locked_state.get_users().contains_key(&username) {
                             let mut reply_hashmap = HashMap::new();
                             reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
                             reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
@@ -77,11 +77,12 @@ fn handle_action(
                             reply = serde_json::to_string(&reply_hashmap).unwrap();
                         } else {
                             let user = User {
-                                id: String::from(""),
+                                id: locked_state.get_next_id(),
                                 sender: sender.clone(),
+                                username: username.clone(),
                             };
-                            
-                            locked.users.insert(username.clone(), user);
+
+                            locked_state.insert_user(user);
                             let mut reply_hashmap = HashMap::new();
                             reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
                             reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());

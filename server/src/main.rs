@@ -1,4 +1,3 @@
-mod connection;
 mod handlers;
 mod model;
 mod server;

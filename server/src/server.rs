@@ -5,6 +5,7 @@ use std::io::{BufReader, BufWriter};
 use std::net::{SocketAddr, TcpListener};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
+use std::sync::atomic::AtomicUsize;
 
 pub struct Server {
     pub listener: TcpListener,
@@ -16,9 +17,7 @@ impl Server {
         let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
         let listener = TcpListener::bind(socket_address)?;
 
-        let state = Arc::new(Mutex::new(ServerState {
-            users: HashMap::new(),
-        }));
+        let state = Arc::new(Mutex::new(ServerState::new()));
 
         Ok(Self { listener, state })
     }
