@@ -1,4 +1,4 @@
-use crate::model::ServerState;
+use crate::model::{ServerState, User};
 use crate::utils::parse_msg_to_json;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, BufWriter, Write};
@@ -66,7 +66,7 @@ fn handle_action(
 
                     {
                         let mut locked = state.lock().unwrap();
-                        if locked.connections.contains_key(&username) {
+                        if locked.users.contains_key(&username) {
                             let mut reply_hashmap = HashMap::new();
                             reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
                             reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
@@ -76,7 +76,12 @@ fn handle_action(
 
                             reply = serde_json::to_string(&reply_hashmap).unwrap();
                         } else {
-                            locked.connections.insert(username.clone(), sender.clone());
+                            let user = User {
+                                id: String::from(""),
+                                sender: sender.clone(),
+                            };
+                            
+                            locked.users.insert(username.clone(), user);
                             let mut reply_hashmap = HashMap::new();
                             reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
                             reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());

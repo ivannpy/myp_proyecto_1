@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::sync::mpsc;
 
 pub struct User {
-    pub username: String,
     pub id: String,
+    pub sender: mpsc::Sender<String>,
 }
 
 pub struct ServerState {
-    pub connections: HashMap<String, mpsc::Sender<String>>,
+    pub users: HashMap<String, User>,
 }

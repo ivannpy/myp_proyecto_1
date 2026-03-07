@@ -17,7 +17,7 @@ impl Server {
         let listener = TcpListener::bind(socket_address)?;
 
         let state = Arc::new(Mutex::new(ServerState {
-            connections: HashMap::new(),
+            users: HashMap::new(),
         }));
 
         Ok(Self { listener, state })
