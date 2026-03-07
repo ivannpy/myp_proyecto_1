@@ -2,7 +2,6 @@ mod server_config;
 mod server;
 mod connection;
 mod utils;
-mod protocol;
 
 use crate::server::Server;
 use crate::server_config::{get_config, ServerConfig};
