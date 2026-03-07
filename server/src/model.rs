@@ -3,8 +3,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc;
 
 /*
-    Representa un usuario activo en el servidor.
- */
+   Representa un usuario activo en el servidor.
+*/
 pub struct User {
     pub username: String,
     pub id: usize,
@@ -12,8 +12,8 @@ pub struct User {
 }
 
 /*
-    Estado del servidor.
- */
+   Estado del servidor.
+*/
 pub struct ServerState {
     users: HashMap<String, User>,
     conn_counter: AtomicUsize,
@@ -21,32 +21,32 @@ pub struct ServerState {
 
 impl ServerState {
     /*
-        Crea un nuevo estado del servidor.
-     */
+       Crea un nuevo estado del servidor.
+    */
     pub fn new() -> Self {
         Self {
             users: HashMap::new(),
             conn_counter: AtomicUsize::new(0),
         }
     }
-    
+
     /*
-        Regresa el siguiente id disponible.
-     */
+       Regresa el siguiente id disponible.
+    */
     pub fn get_next_id(&self) -> usize {
         self.conn_counter.fetch_add(1, Ordering::SeqCst)
     }
-    
+
     /*
-        Regresa los usuarios activos.
-     */
+       Regresa los usuarios activos.
+    */
     pub fn get_users(&self) -> &HashMap<String, User> {
         &self.users
     }
-    
+
     /*
-        Agrega un nuevo usuario a los usuarios activos.
-     */
+       Agrega un nuevo usuario a los usuarios activos.
+    */
     pub fn insert_user(&mut self, user: User) {
         self.users.insert(user.username.clone(), user);
     }

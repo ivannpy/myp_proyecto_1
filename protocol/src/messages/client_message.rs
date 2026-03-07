@@ -1,6 +1,6 @@
 /*
-    Los mensajes que recibe el cliente.
- */
+   Los mensajes que recibe el cliente.
+*/
 pub enum ClientMessage {
     Response {
         operation: String,
