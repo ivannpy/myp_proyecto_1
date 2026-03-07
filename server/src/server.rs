@@ -1,59 +1,93 @@
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::thread;
-use std::io::{Read, Write};
+use std::io::{Read, Write, BufReader, BufWriter};
 use std::sync::{mpsc, Arc, Mutex};
-
+use config::ValueKind::String;
 use crate::utils::parse_msg_to_json;
 use crate::connection::Connection;
+use crate::model::ServerState;
 
-struct ServerState {
-    pub connections: HashMap<String, Connection>,
-}
+use protocol::messages::client_message::ClientMessage;
 
 pub struct Server {
-    listener: TcpListener,
-    state: Arc<Mutex<ServerState>>,
+    pub listener: TcpListener,
+    pub state: Arc<Mutex<ServerState>>,
 }
 
 impl Server {
-    pub fn new(address: [u8; 4], port: u16) -> Self {
-        let socket_address: SocketAddr = SocketAddr::from((address, port));
-        let listener: TcpListener = TcpListener::bind(&socket_address).unwrap();
+    pub fn new(port: u16) -> Result<Self, std::io::Error> {
+        let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
+        let listener = TcpListener::bind(socket_address)?;
 
         let state = Arc::new(Mutex::new(ServerState {
             connections: HashMap::new(),
         }));
 
-        Self {
+        Ok(Self {
             listener,
             state,
-        }
+        })
     }
     
     /*
         Levanta el servidor TCP con sockets.
      */
-    pub fn start(&mut self) -> std::io::Result<()> {
+    pub fn run(&self) -> Result<(), std::io::Error> {
         
         println!("Servidor {} escuchando en el puerto {}",
                  self.listener.local_addr()?.ip(),
                  self.listener.local_addr()?.port());
 
-        for incoming in self.listener.incoming() {
-            match incoming {
-                Ok(socket) => {
-                    // El hilo debe poseer el socket
-                    let state = Arc::clone(&self.state);
-                    thread::spawn(move || Self::handle_connection(socket, state));
+        loop {
+            match self.listener.accept() {
+                Ok((socket, addr)) => {
+                    let socket_clone = socket.try_clone();
+                    match socket_clone {
+                        Ok(socket_clone) => {
+                            let reader = BufReader::new(socket_clone);
+                            let writer = BufWriter::new(socket);
+                            let (sender, receiver) = mpsc::channel::<ClientMessage>();
+                            let state = Arc::clone(&self.state);
+
+                            thread::spawn(|| Self::handle_connection());
+
+                        },
+                        Err(e) => {
+                            eprintln!("Error clonando socket: {}", e);
+                            continue;
+                        }
+                    }
                 }
-                Err(e) => {
-                    eprintln!("Error aceptando conexión: {}", e)
-                },
+                _ => {
+                    eprintln!("Error al aceptar conexion");
+                    continue;
+                }
             }
         }
+    }
 
-        Ok(())
+    fn handle_connection(reader: BufReader<TcpStream>,
+                         writer: BufWriter<TcpStream>,
+                         sender: mpsc::Sender<ClientMessage>,
+                         receiver: mpsc::Receiver<ClientMessage>,
+                         state: Arc<Mutex<ServerState>>) {
+
+        // Manejar mensajes desde el cliente
+        thread::spawn(Self::handle_input_from_client(reader, sender, state.clone()));
+        // Manejar mensajes hacia el cliente
+        thread::spawn(Self::handle_output_to_client(writer, receiver));
+
+    }
+
+    fn handle_input_from_client(reader: BufReader<TcpStream>,
+                                sender: mpsc::Sender<ClientMessage>,
+                                state: Arc<Mutex<ServerState>>) {
+
+    }
+
+    fn handle_output_to_client(writer: BufWriter<TcpStream>,
+                               receiver: mpsc::Receiver<ClientMessage>) {
 
     }
 
@@ -108,7 +142,7 @@ impl Server {
     /*
         Maneja una conexion TCP entrante
      */
-    fn handle_connection(mut socket: TcpStream,
+    fn _handle_connection(mut socket: TcpStream,
                          state: Arc<Mutex<ServerState>>) {
         let socket_addr: SocketAddr = socket.peer_addr().ok().unwrap();
 

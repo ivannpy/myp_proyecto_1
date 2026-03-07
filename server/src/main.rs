@@ -2,6 +2,7 @@ mod server_config;
 mod server;
 mod connection;
 mod utils;
+mod model;
 
 use crate::server::Server;
 use crate::server_config::{get_config, ServerConfig};
@@ -12,9 +13,8 @@ use crate::server_config::{get_config, ServerConfig};
 fn main() {
     let config: ServerConfig = get_config();
 
-    let address: [u8; 4] = config.get_host();
     let port: u16 = config.get_port();
 
-    let mut server: Server = Server::new(address, port);
-    server.start().unwrap();
+    let server = Server::new(port);
+    server.and_then(|mut s| s.run()).expect("No se pudo iniciar");
 }
