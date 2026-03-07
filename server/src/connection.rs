@@ -7,9 +7,7 @@ pub struct Connection {
 
 impl Connection {
     pub fn new(channel: mpsc::Sender<String>) -> Self {
-        Self {
-            channel
-        }
+        Self { channel }
     }
     pub fn send(&self, msg: String) {
         let _ = self.channel.send(msg);

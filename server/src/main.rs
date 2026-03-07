@@ -1,14 +1,14 @@
-mod server;
 mod connection;
-mod utils;
-mod model;
 mod handlers;
+mod model;
+mod server;
+mod utils;
 
 use crate::server::Server;
 
 /*
-    Punto de entrada del programa.
- */
+   Punto de entrada del programa.
+*/
 fn main() {
     let port: u16 = 1234;
 

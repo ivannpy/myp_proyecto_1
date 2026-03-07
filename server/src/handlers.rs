@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-use std::net::TcpStream;
-use std::sync::{mpsc, Arc, Mutex};
 use crate::model::ServerState;
 use crate::utils::parse_msg_to_json;
+use std::collections::HashMap;
 use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::net::TcpStream;
+use std::sync::{Arc, Mutex, mpsc};
 
 pub fn handle_input_from_client(
     mut reader: BufReader<TcpStream>,
@@ -69,12 +69,9 @@ fn handle_action(
                         if locked.connections.contains_key(&username) {
                             let mut reply_hashmap = HashMap::new();
                             reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
+                            reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
                             reply_hashmap
-                                .insert("operation".to_string(), "IDENTIFY".to_string());
-                            reply_hashmap.insert(
-                                "result".to_string(),
-                                "USER_ALREADY_EXISTS".to_string(),
-                            );
+                                .insert("result".to_string(), "USER_ALREADY_EXISTS".to_string());
                             reply_hashmap.insert("extra".to_string(), username.clone());
 
                             reply = serde_json::to_string(&reply_hashmap).unwrap();
@@ -82,8 +79,7 @@ fn handle_action(
                             locked.connections.insert(username.clone(), sender.clone());
                             let mut reply_hashmap = HashMap::new();
                             reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
-                            reply_hashmap
-                                .insert("operation".to_string(), "IDENTIFY".to_string());
+                            reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
                             reply_hashmap.insert("result".to_string(), "SUCCESS".to_string());
                             reply_hashmap.insert("extra".to_string(), username.clone());
                             reply = serde_json::to_string(&reply_hashmap).unwrap();

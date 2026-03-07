@@ -1,6 +1,5 @@
-use std::collections::HashMap;
 use serde_json::{Value, from_str};
-
+use std::collections::HashMap;
 
 pub fn parse_msg_to_json(msg: &str) -> HashMap<String, String> {
     let json = from_str::<Value>(msg);
@@ -18,17 +17,16 @@ pub fn parse_msg_to_json(msg: &str) -> HashMap<String, String> {
                         map.insert(key.to_string(), normalized);
                     }
                     map
-                },
+                }
                 None => {
                     // cerrar conexion
                     HashMap::new()
-                },
+                }
             }
-        },
+        }
         Err(_) => {
             // cerrar conexion
             HashMap::new()
         }
     }
-
 }
