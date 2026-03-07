@@ -5,12 +5,18 @@ use std::net::{SocketAddr, TcpListener};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 
+/*
+    Representa un servidor de sockets TCP.
+ */
 pub struct Server {
     pub listener: TcpListener,
     pub state: Arc<Mutex<ServerState>>,
 }
 
 impl Server {
+    /*
+        Crea un nuevo servidor de sockets TCP.
+     */
     pub fn new(port: u16) -> Result<Self, std::io::Error> {
         let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
         let listener = TcpListener::bind(socket_address)?;

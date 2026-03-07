@@ -1,6 +1,9 @@
 use serde_json::{Value, from_str};
 use std::collections::HashMap;
 
+/*
+    Construye un HashMap a partir de un mensaje JSON.
+ */
 pub fn parse_msg_to_json(msg: &str) -> HashMap<String, String> {
     let json = from_str::<Value>(msg);
     match json {
