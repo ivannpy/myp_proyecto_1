@@ -1,4 +1,4 @@
-use crate::handlers::{handle_input_from_client, handle_output_to_client};
+use crate::handlers::{handle_input_from_client, handle_output_to_client, ClientHandler};
 use crate::model::ServerState;
 use std::io::{BufReader, BufWriter};
 use std::net::{SocketAddr, TcpListener};
@@ -42,6 +42,7 @@ impl Server {
                     let socket_clone = socket.try_clone();
                     match socket_clone {
                         Ok(socket_clone) => {
+                            let id = self.state.lock().unwrap().get_next_id();
                             let reader = BufReader::new(socket_clone);
                             let writer = BufWriter::new(socket);
                             let (sender, receiver) = mpsc::channel::<String>();
@@ -53,7 +54,8 @@ impl Server {
                             println!("\tPuerto: {:?}", reader.get_ref().peer_addr()?.port());
 
                             // Manejar mensajes desde el cliente
-                            thread::spawn(|| handle_input_from_client(reader, sender, state));
+                            let handler = ClientHandler::new(id, sender, state);
+                            thread::spawn(|| handle_input_from_client(reader, handler));
 
                             // Manejar mensajes hacia el cliente
                             thread::spawn(|| handle_output_to_client(writer, receiver));

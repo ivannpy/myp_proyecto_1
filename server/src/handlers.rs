@@ -9,11 +9,7 @@ use std::sync::{Arc, Mutex, mpsc};
 /*
    Maneja la entrada de mensajes desde el cliente.
 */
-pub fn handle_input_from_client(
-    mut reader: BufReader<TcpStream>,
-    sender: mpsc::Sender<String>,
-    state: Arc<Mutex<ServerState>>,
-) {
+pub fn handle_input_from_client(mut reader: BufReader<TcpStream>, mut handler: ClientHandler) {
     let mut line = String::new();
     loop {
         line.clear();
@@ -28,7 +24,7 @@ pub fn handle_input_from_client(
                 let msg = ServerMessage::Identify {
                     username: data.get("username").unwrap().clone(),
                 };
-                handle_message(&state, &sender, msg);
+                handler.handle_message(msg);
                 println!("<<< {}", msg_str);
             }
             Err(e) => {
@@ -58,59 +54,73 @@ pub fn handle_output_to_client(mut writer: BufWriter<TcpStream>, receiver: mpsc:
     }
 }
 
-// Manejadores del protocolo
+// Manejadores del protocolo para comunicarse con los clientes
 
-/*
-   Maneja la identificación de un usuario.
-*/
-fn handle_identify(
-    state: &Arc<Mutex<ServerState>>,
-    sender: &mpsc::Sender<String>,
-    username: String,
-) {
-    let reply: String;
-    {
-        let mut locked_state = state.lock().unwrap();
-        if locked_state.get_users().contains_key(&username) {
-            let mut reply_hashmap = HashMap::new();
-            reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
-            reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
-            reply_hashmap.insert("result".to_string(), "USER_ALREADY_EXISTS".to_string());
-            reply_hashmap.insert("extra".to_string(), username.clone());
-            reply = serde_json::to_string(&reply_hashmap).unwrap();
-        } else {
-            let user = User {
-                id: locked_state.get_next_id(),
-                sender: sender.clone(),
-                username: username.clone(),
-            };
-
-            println!(
-                "User {} inserted with id {} and sender {:?}",
-                username, user.id, user.sender
-            );
-
-            locked_state.insert_user(user);
-            let mut reply_hashmap = HashMap::new();
-            reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
-            reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
-            reply_hashmap.insert("result".to_string(), "SUCCESS".to_string());
-            reply_hashmap.insert("extra".to_string(), username.clone());
-            reply = serde_json::to_string(&reply_hashmap).unwrap();
-        }
-    }
-    sender.send(reply).unwrap();
+pub struct ClientHandler {
+    username: Option<String>,
+    id: usize,
+    sender: mpsc::Sender<String>,
+    state: Arc<Mutex<ServerState>>,
 }
 
-/*
-   Manejador de mensajes del protocolo.
-*/
-pub fn handle_message(
-    state: &Arc<Mutex<ServerState>>,
-    sender: &mpsc::Sender<String>,
-    msg: ServerMessage,
-) {
-    match msg {
-        ServerMessage::Identify { username } => handle_identify(state, sender, username),
+impl ClientHandler {
+    pub fn new(
+        id: usize,
+        sender: mpsc::Sender<String>,
+        state: Arc<Mutex<ServerState>>,
+    ) -> Self {
+        Self {
+            username: None,
+            id,
+            sender,
+            state,
+        }
+    }
+
+    /*
+       Manejador de mensajes del protocolo.
+    */
+    pub fn handle_message(&mut self, msg: ServerMessage) {
+        match msg {
+            ServerMessage::Identify { username } => self.handle_identify(username),
+        }
+    }
+
+    /*
+       Maneja la identificación de un usuario.
+    */
+    fn handle_identify(&self, username: String) {
+        let reply: String;
+        {
+            let mut locked_state = self.state.lock().unwrap();
+            if locked_state.get_users().contains_key(&username) {
+                let mut reply_hashmap = HashMap::new();
+                reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
+                reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
+                reply_hashmap.insert("result".to_string(), "USER_ALREADY_EXISTS".to_string());
+                reply_hashmap.insert("extra".to_string(), username.clone());
+                reply = serde_json::to_string(&reply_hashmap).unwrap();
+            } else {
+                let user = User {
+                    id: locked_state.get_next_id(),
+                    sender: self.sender.clone(),
+                    username: username.clone(),
+                };
+
+                println!(
+                    "User {} inserted with id {} and sender {:?}",
+                    username, user.id, user.sender
+                );
+
+                locked_state.insert_user(user);
+                let mut reply_hashmap = HashMap::new();
+                reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
+                reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
+                reply_hashmap.insert("result".to_string(), "SUCCESS".to_string());
+                reply_hashmap.insert("extra".to_string(), username.clone());
+                reply = serde_json::to_string(&reply_hashmap).unwrap();
+            }
+        }
+        self.sender.send(reply).unwrap();
     }
 }
