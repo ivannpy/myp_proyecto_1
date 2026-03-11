@@ -9,7 +9,7 @@ use std::thread;
 
 ///
 /// Servidor de sockets TCP
-/// 
+///
 pub struct Server {
     pub listener: TcpListener,
     pub state: Arc<Mutex<ServerState>>,
@@ -19,7 +19,7 @@ pub struct Server {
 impl Server {
     ///
     /// Crea un nuevo servidor de sockets
-    /// 
+    ///
     pub fn new(port: u16) -> Result<Self, std::io::Error> {
         let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
         let listener = TcpListener::bind(socket_address)?;
@@ -36,7 +36,7 @@ impl Server {
 
     ///
     /// Levanta el servidor de sockets TCP
-    /// 
+    ///
     pub fn run(&self) -> Result<(), std::io::Error> {
         println!(
             "Servidor {} escuchando en el puerto {}",

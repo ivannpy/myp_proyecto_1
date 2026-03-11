@@ -91,6 +91,15 @@ impl Broadcaster {
         }
         Ok(())
     }
+
+    fn send_message_to_all(&self, msg: &ClientMessage) {
+        for (id, sender) in self.clients.iter() {
+            let r = sender.send(msg.clone());
+            if r.is_err() {
+                println!("Error al enviar mensaje a cliente {}", id);
+            }
+        }
+    }
 }
 
 #[cfg(test)]

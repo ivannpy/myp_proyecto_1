@@ -13,7 +13,7 @@ pub struct ServerState {
 impl ServerState {
     ///
     /// Crea un nuevo estado del servidor
-    /// 
+    ///
     pub fn new() -> Self {
         Self {
             users: HashMap::new(),
@@ -28,16 +28,16 @@ impl ServerState {
         self.conn_counter.fetch_add(1, Ordering::SeqCst)
     }
 
-    /// 
+    ///
     /// Regresa los usuarios activos.
-    /// 
+    ///
     pub fn get_users(&self) -> &HashMap<String, User> {
         &self.users
     }
 
     ///
     /// Agrega un nuevo usuario a los usuarios activos.
-    /// 
+    ///
     pub fn insert_user(&mut self, user: User) {
         self.users.insert(user.username.clone(), user);
     }
