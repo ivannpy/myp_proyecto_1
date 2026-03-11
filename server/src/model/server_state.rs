@@ -68,7 +68,7 @@ mod tests {
     }
 
     #[test]
-    fn test_counter_after_insert() {
+    fn test_server_counter_after_insert() {
         let mut state = ServerState::new();
         let user = User {
             username: "user_1".to_string(),
