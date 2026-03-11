@@ -2,9 +2,9 @@ use crate::model::user::User;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-/*
-   Estado del servidor.
-*/
+///
+///   Estado del servidor.
+///
 pub struct ServerState {
     users: HashMap<String, User>,
     conn_counter: AtomicUsize,

@@ -1,4 +1,4 @@
-use crate::messages::responses::Result;
+use crate::messages::responses::{Operation, Result};
 use crate::status::user::UserStatus;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -9,9 +9,9 @@ use std::collections::HashMap;
 #[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ClientMessage {
     Response {
-        operation: String,
+        operation: Operation,
         result: Result,
-        extra: String,
+        extra: Option<String>,
     },
     NewUser {
         username: String,

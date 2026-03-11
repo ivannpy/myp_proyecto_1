@@ -1,7 +1,7 @@
 use crate::model::server_state::ServerState;
 use crate::model::user::User;
 use protocol::messages::client_message::ClientMessage;
-use protocol::messages::responses::Result;
+use protocol::messages::responses::{Operation, Result};
 use protocol::messages::server_message::ServerMessage;
 use protocol::status::user::UserStatus;
 use std::io::{BufRead, BufReader, BufWriter, Write};
@@ -94,13 +94,38 @@ impl ClientHandler {
         }
     }
 
-    /*
-       Manejador de mensajes del protocolo.
-    */
+    fn check_username(&self) {
+        if self.username.is_none() {
+            let reply = ClientMessage::Response {
+                operation: Operation::Invalid,
+                result: Result::NotIdentified,
+                extra: None,
+            };
+            self.sender.send(reply).unwrap();
+            // DESCONECTAR
+        }
+    }
+
+    ///
+    /// Maneja los mensajes que recibe el cliente
+    ///
     pub fn handle_message(&mut self, msg: ServerMessage) {
         match msg {
             ServerMessage::Identify { username } => self.handle_identify(username),
-            _ => {}
+            ServerMessage::Status { status } => self.handle_status(status),
+            ServerMessage::Users => self.handle_users(),
+            ServerMessage::Text { username, text } => self.handle_text(username, text),
+            ServerMessage::PublicText { text } => self.handle_public_text(text),
+            ServerMessage::NewRoom { roomname } => self.handle_new_room(roomname),
+            ServerMessage::Invite {
+                roomname,
+                usernames,
+            } => self.handle_invite(roomname, usernames),
+            ServerMessage::JoinRoom { roomname } => self.handle_join_room(roomname),
+            ServerMessage::RoomUsers { roomname } => self.handle_room_users(roomname),
+            ServerMessage::RoomText { roomname, text } => self.handle_room_text(roomname, text),
+            ServerMessage::LeaveRoom { roomname } => self.handle_leave_room(roomname),
+            ServerMessage::Disconnect => self.handle_disconnect(),
         }
     }
 
@@ -114,9 +139,9 @@ impl ClientHandler {
             let mut locked_state = self.state.lock().unwrap();
             if locked_state.get_users().contains_key(&username) {
                 reply = ClientMessage::Response {
-                    operation: "IDENTIFY".to_string(),
+                    operation: Operation::Identify,
                     result: Result::UserAlreadyExists,
-                    extra: username.clone(),
+                    extra: Some(username.clone()),
                 }
             } else {
                 let user = User {
@@ -131,13 +156,88 @@ impl ClientHandler {
                 self.username = Some(username.clone());
 
                 reply = ClientMessage::Response {
-                    operation: "IDENTIFY".to_string(),
+                    operation: Operation::Identify,
                     result: Result::Success,
-                    extra: username.clone(),
+                    extra: Some(username.clone()),
                 };
             }
         }
         self.sender.send(reply).unwrap();
+    }
+
+    ///
+    /// Maneja user status
+    ///
+    fn handle_status(&mut self, status: UserStatus) {
+        self.check_username();
+    }
+
+    ///
+    /// Maneja users
+    ///
+    fn handle_users(&mut self) {
+        self.check_username();
+    }
+
+    ///
+    /// Maneja text
+    ///
+    fn handle_text(&mut self, username: String, text: String) {
+        self.check_username();
+    }
+
+    ///
+    /// Maneja public text
+    ///
+    fn handle_public_text(&mut self, text: String) {
+        self.check_username();
+    }
+
+    ///
+    /// Maneja new room
+    ///
+    fn handle_new_room(&mut self, roomname: String) {
+        self.check_username();
+    }
+
+    ///
+    /// Maneja invite
+    ///
+    fn handle_invite(&mut self, roomname: String, usernames: Vec<String>) {
+        self.check_username();
+    }
+
+    ///
+    /// Maneja join_room
+    ///
+    fn handle_join_room(&mut self, roomname: String) {
+        self.check_username();
+    }
+
+    ///
+    /// Maneja room_users
+    ///
+    fn handle_room_users(&mut self, roomname: String) {
+        self.check_username();
+    }
+
+    ///
+    /// Maneja room text
+    fn handle_room_text(&mut self, roomname: String, text: String) {
+        self.check_username();
+    }
+
+    ///
+    /// Maneja leave room
+    fn handle_leave_room(&mut self, roomname: String) {
+        self.check_username();
+    }
+
+    ///
+    /// Maneja disconnect
+    ///
+    fn handle_disconnect(&mut self) {
+        self.check_username();
     }
 }
 
