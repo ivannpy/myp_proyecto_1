@@ -1,9 +1,7 @@
 mod handlers;
 mod model;
-mod server;
-mod utils;
 
-use crate::server::Server;
+use model::server::Server;
 
 /*
    Punto de entrada del programa.

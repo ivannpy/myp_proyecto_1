@@ -1,5 +1,6 @@
-use crate::handlers::{handle_input_from_client, handle_output_to_client, ClientHandler};
-use crate::model::ServerState;
+use crate::handlers::{ClientHandler, handle_input_from_client, handle_output_to_client};
+use crate::model::server_state::ServerState;
+use protocol::messages::client_message::ClientMessage;
 use std::io::{BufReader, BufWriter};
 use std::net::{SocketAddr, TcpListener};
 use std::sync::{Arc, Mutex, mpsc};
@@ -45,7 +46,7 @@ impl Server {
                             let id = self.state.lock().unwrap().get_next_id();
                             let reader = BufReader::new(socket_clone);
                             let writer = BufWriter::new(socket);
-                            let (sender, receiver) = mpsc::channel::<String>();
+                            let (sender, receiver) = mpsc::channel::<ClientMessage>();
                             let state = Arc::clone(&self.state);
 
                             // TODO: incorporar a bitácora

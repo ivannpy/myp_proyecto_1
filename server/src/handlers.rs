@@ -1,7 +1,8 @@
-use crate::model::{ServerState, User};
-use crate::utils::parse_msg_to_json;
+use crate::model::server_state::ServerState;
+use crate::model::user::User;
+use protocol::messages::client_message::ClientMessage;
+use protocol::messages::responses::ResponseResult;
 use protocol::messages::server_message::ServerMessage;
-use std::collections::HashMap;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex, mpsc};
@@ -19,13 +20,16 @@ pub fn handle_input_from_client(mut reader: BufReader<TcpStream>, mut handler: C
             Ok(_) => {
                 // Manejar mensaje recibido
                 let msg_str = line.trim();
+
                 // Parsear linea a ServerMessage
-                let data = parse_msg_to_json(msg_str);
-                let msg = ServerMessage::Identify {
-                    username: data.get("username").unwrap().clone(),
-                };
-                handler.handle_message(msg);
-                println!("<<< {}", msg_str);
+                let parsed = serde_json::from_str::<ServerMessage>(msg_str);
+                match parsed {
+                    Ok(server_msg) => {
+                        handler.handle_message(server_msg);
+                        println!("<<< {}", msg_str);
+                    }
+                    Err(e) => println!("Error parseando de texto a ServerMessage: {}", e),
+                }
             }
             Err(e) => {
                 eprintln!(
@@ -41,15 +45,27 @@ pub fn handle_input_from_client(mut reader: BufReader<TcpStream>, mut handler: C
 /*
    Maneja la salida de mensajes al cliente.
 */
-pub fn handle_output_to_client(mut writer: BufWriter<TcpStream>, receiver: mpsc::Receiver<String>) {
-    while let Ok(mut msg) = receiver.recv() {
-        msg.push('\n');
-        println!(">>> {}", msg);
-        if writer.write_all(msg.as_bytes()).is_err() {
-            break;
-        }
-        if writer.flush().is_err() {
-            break;
+pub fn handle_output_to_client(
+    mut writer: BufWriter<TcpStream>,
+    receiver: mpsc::Receiver<ClientMessage>,
+) {
+    while let Ok(client_msg) = receiver.recv() {
+        let client_msg_str = serde_json::to_string(&client_msg);
+        match client_msg_str {
+            Ok(mut msg_str) => {
+                msg_str.push('\n');
+                println!(">>> {:?}", msg_str);
+                if writer.write_all(msg_str.as_bytes()).is_err() {
+                    break;
+                }
+                if writer.flush().is_err() {
+                    break;
+                }
+            }
+            Err(e) => {
+                eprintln!("Error serializando ClientMessage: {}", e);
+                continue;
+            }
         }
     }
 }
@@ -59,14 +75,14 @@ pub fn handle_output_to_client(mut writer: BufWriter<TcpStream>, receiver: mpsc:
 pub struct ClientHandler {
     username: Option<String>,
     id: usize,
-    sender: mpsc::Sender<String>,
+    sender: mpsc::Sender<ClientMessage>,
     state: Arc<Mutex<ServerState>>,
 }
 
 impl ClientHandler {
     pub fn new(
         id: usize,
-        sender: mpsc::Sender<String>,
+        sender: mpsc::Sender<ClientMessage>,
         state: Arc<Mutex<ServerState>>,
     ) -> Self {
         Self {
@@ -89,20 +105,20 @@ impl ClientHandler {
     /*
        Maneja la identificación de un usuario.
     */
-    fn handle_identify(&self, username: String) {
-        let reply: String;
+    fn handle_identify(&mut self, username: String) {
+        let reply: ClientMessage;
+
         {
             let mut locked_state = self.state.lock().unwrap();
             if locked_state.get_users().contains_key(&username) {
-                let mut reply_hashmap = HashMap::new();
-                reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
-                reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
-                reply_hashmap.insert("result".to_string(), "USER_ALREADY_EXISTS".to_string());
-                reply_hashmap.insert("extra".to_string(), username.clone());
-                reply = serde_json::to_string(&reply_hashmap).unwrap();
+                reply = ClientMessage::Response {
+                    operation: "IDENTIFY".to_string(),
+                    result: ResponseResult::UserAlreadyExists,
+                    extra: username.clone(),
+                }
             } else {
                 let user = User {
-                    id: locked_state.get_next_id(),
+                    id: self.id,
                     sender: self.sender.clone(),
                     username: username.clone(),
                 };
@@ -113,12 +129,13 @@ impl ClientHandler {
                 );
 
                 locked_state.insert_user(user);
-                let mut reply_hashmap = HashMap::new();
-                reply_hashmap.insert("type".to_string(), "RESPONSE".to_string());
-                reply_hashmap.insert("operation".to_string(), "IDENTIFY".to_string());
-                reply_hashmap.insert("result".to_string(), "SUCCESS".to_string());
-                reply_hashmap.insert("extra".to_string(), username.clone());
-                reply = serde_json::to_string(&reply_hashmap).unwrap();
+                self.username = Some(username.clone());
+
+                reply = ClientMessage::Response {
+                    operation: "IDENTIFY".to_string(),
+                    result: ResponseResult::Success,
+                    extra: username.clone(),
+                };
             }
         }
         self.sender.send(reply).unwrap();

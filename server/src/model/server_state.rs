@@ -1,15 +1,6 @@
+use crate::model::user::User;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::mpsc;
-
-/*
-   Representa un usuario activo en el servidor.
-*/
-pub struct User {
-    pub username: String,
-    pub id: usize,
-    pub sender: mpsc::Sender<String>,
-}
 
 /*
    Estado del servidor.
@@ -55,6 +46,7 @@ impl ServerState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::mpsc;
 
     #[test]
     fn test_server_init_state() {
