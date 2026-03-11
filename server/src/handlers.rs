@@ -120,14 +120,10 @@ impl ClientHandler {
                 let user = User {
                     id: self.id,
                     state: UserState::Active,
-                    sender: self.sender.clone(),
                     username: username.clone(),
                 };
 
-                println!(
-                    "User {} inserted with id {} and sender {:?}",
-                    username, user.id, user.sender
-                );
+                println!("User {} inserted with id {}", username, user.id);
 
                 locked_state.insert_user(user);
                 self.username = Some(username.clone());

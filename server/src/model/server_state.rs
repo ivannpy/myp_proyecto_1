@@ -46,7 +46,6 @@ impl ServerState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::mpsc;
     use crate::model::user::UserState;
 
     #[test]
@@ -63,7 +62,6 @@ mod tests {
             username: "user_1".to_string(),
             state: UserState::Active,
             id: state.get_next_id(),
-            sender: mpsc::channel().0,
         };
         state.insert_user(user);
         assert_eq!(state.get_users().len(), 1);
@@ -76,7 +74,6 @@ mod tests {
             username: "user_1".to_string(),
             state: UserState::Active,
             id: state.get_next_id(),
-            sender: mpsc::channel().0,
         };
         state.insert_user(user);
         assert_eq!(state.get_next_id(), 1);

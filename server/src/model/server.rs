@@ -1,3 +1,4 @@
+use crate::broadcaster::Broadcaster;
 use crate::handlers::{ClientHandler, handle_input_from_client, handle_output_to_client};
 use crate::model::server_state::ServerState;
 use protocol::messages::client_message::ClientMessage;
@@ -12,6 +13,7 @@ use std::thread;
 pub struct Server {
     pub listener: TcpListener,
     pub state: Arc<Mutex<ServerState>>,
+    pub broadcaster: Arc<Mutex<Broadcaster>>,
 }
 
 impl Server {
@@ -23,8 +25,13 @@ impl Server {
         let listener = TcpListener::bind(socket_address)?;
 
         let state = Arc::new(Mutex::new(ServerState::new()));
+        let broadcaster = Arc::new(Mutex::new(Broadcaster::new()));
 
-        Ok(Self { listener, state })
+        Ok(Self {
+            listener,
+            state,
+            broadcaster,
+        })
     }
 
     /*
@@ -53,6 +60,11 @@ impl Server {
                             println!("Conexion aceptada");
                             println!("\tCliente: {:?}", reader.get_ref().peer_addr());
                             println!("\tPuerto: {:?}", reader.get_ref().peer_addr()?.port());
+
+                            self.broadcaster
+                                .lock()
+                                .unwrap()
+                                .add_client(id, sender.clone());
 
                             // Manejar mensajes desde el cliente
                             let handler = ClientHandler::new(id, sender, state);
