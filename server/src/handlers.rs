@@ -1,8 +1,9 @@
 use crate::model::server_state::ServerState;
-use crate::model::user::{User, UserState};
+use crate::model::user::User;
 use protocol::messages::client_message::ClientMessage;
-use protocol::messages::responses::ResponseResult;
+use protocol::messages::responses::Result;
 use protocol::messages::server_message::ServerMessage;
+use protocol::status::user::UserStatus;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex, mpsc};
@@ -99,6 +100,7 @@ impl ClientHandler {
     pub fn handle_message(&mut self, msg: ServerMessage) {
         match msg {
             ServerMessage::Identify { username } => self.handle_identify(username),
+            _ => {}
         }
     }
 
@@ -113,13 +115,13 @@ impl ClientHandler {
             if locked_state.get_users().contains_key(&username) {
                 reply = ClientMessage::Response {
                     operation: "IDENTIFY".to_string(),
-                    result: ResponseResult::UserAlreadyExists,
+                    result: Result::UserAlreadyExists,
                     extra: username.clone(),
                 }
             } else {
                 let user = User {
                     id: self.id,
-                    state: UserState::Active,
+                    state: UserStatus::Active,
                     username: username.clone(),
                 };
 
@@ -130,7 +132,7 @@ impl ClientHandler {
 
                 reply = ClientMessage::Response {
                     operation: "IDENTIFY".to_string(),
-                    result: ResponseResult::Success,
+                    result: Result::Success,
                     extra: username.clone(),
                 };
             }
@@ -138,3 +140,6 @@ impl ClientHandler {
         self.sender.send(reply).unwrap();
     }
 }
+
+#[cfg(test)]
+mod tests {}

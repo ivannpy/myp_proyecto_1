@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use protocol::status::user::UserStatus;
 
 ///
 /// Longitud máxima permitida para los nombres de lo usuarios
@@ -17,19 +17,8 @@ pub fn validate_username(user: &User) -> bool {
 ///
 pub struct User {
     pub username: String,
-    pub state: UserState,
+    pub state: UserStatus,
     pub id: usize,
-}
-
-///
-/// Representa el estado de un usuario en el servidor.
-///
-#[derive(Deserialize, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum UserState {
-    Active,
-    Away,
-    Busy,
 }
 
 mod tests {
@@ -39,12 +28,12 @@ mod tests {
     fn test_user_username() {
         let user_1 = User {
             username: "12345678".to_string(),
-            state: UserState::Active,
+            state: UserStatus::Active,
             id: 0,
         };
         let user_2 = User {
             username: "123456789".to_string(),
-            state: UserState::Active,
+            state: UserStatus::Active,
             id: 1,
         };
 

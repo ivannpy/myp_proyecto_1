@@ -93,4 +93,5 @@ impl Broadcaster {
     }
 }
 
+#[cfg(test)]
 mod tests {}

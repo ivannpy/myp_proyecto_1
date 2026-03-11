@@ -46,7 +46,7 @@ impl ServerState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::user::UserState;
+    use protocol::status::user::UserStatus;
 
     #[test]
     fn test_server_init_state() {
@@ -60,7 +60,7 @@ mod tests {
         let mut state = ServerState::new();
         let user = User {
             username: "user_1".to_string(),
-            state: UserState::Active,
+            state: UserStatus::Active,
             id: state.get_next_id(),
         };
         state.insert_user(user);
@@ -72,7 +72,7 @@ mod tests {
         let mut state = ServerState::new();
         let user = User {
             username: "user_1".to_string(),
-            state: UserState::Active,
+            state: UserStatus::Active,
             id: state.get_next_id(),
         };
         state.insert_user(user);
