@@ -13,6 +13,7 @@ pub fn validate_username(username: &str) -> bool {
 */
 pub struct User {
     pub username: String,
+    pub state: UserState,
     pub id: usize,
     pub sender: mpsc::Sender<ClientMessage>,
 }

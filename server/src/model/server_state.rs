@@ -47,6 +47,7 @@ impl ServerState {
 mod tests {
     use super::*;
     use std::sync::mpsc;
+    use crate::model::user::UserState;
 
     #[test]
     fn test_server_init_state() {
@@ -60,6 +61,7 @@ mod tests {
         let mut state = ServerState::new();
         let user = User {
             username: "user_1".to_string(),
+            state: UserState::Active,
             id: state.get_next_id(),
             sender: mpsc::channel().0,
         };
@@ -72,6 +74,7 @@ mod tests {
         let mut state = ServerState::new();
         let user = User {
             username: "user_1".to_string(),
+            state: UserState::Active,
             id: state.get_next_id(),
             sender: mpsc::channel().0,
         };

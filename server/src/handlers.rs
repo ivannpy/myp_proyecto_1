@@ -1,5 +1,5 @@
 use crate::model::server_state::ServerState;
-use crate::model::user::User;
+use crate::model::user::{User, UserState};
 use protocol::messages::client_message::ClientMessage;
 use protocol::messages::responses::ResponseResult;
 use protocol::messages::server_message::ServerMessage;
@@ -119,6 +119,7 @@ impl ClientHandler {
             } else {
                 let user = User {
                     id: self.id,
+                    state: UserState::Active,
                     sender: self.sender.clone(),
                     username: username.clone(),
                 };
