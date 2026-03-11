@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-/*
-   Tipos de respuestas del servidor.
-*/
+///
+/// Posibles resultados de las operaciones que realiza el servidor
+///
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Result {
@@ -17,6 +17,9 @@ pub enum Result {
     Invalid,
 }
 
+///
+/// Operaciones que realiza el servidor a petición de un cliente
+///
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Operation {

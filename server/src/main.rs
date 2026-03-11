@@ -4,9 +4,9 @@ mod model;
 
 use model::server::Server;
 
-/*
-   Punto de entrada del programa.
-*/
+///
+/// Punto de entrada del servidor
+///
 fn main() {
     let port: u16 = 1234;
 

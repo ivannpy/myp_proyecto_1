@@ -8,9 +8,9 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex, mpsc};
 
-/*
-   Maneja la entrada de mensajes desde el cliente.
-*/
+///
+/// Maneja la entrada de mensajes desde el cliente.
+/// 
 pub fn handle_input_from_client(mut reader: BufReader<TcpStream>, mut handler: ClientHandler) {
     let mut line = String::new();
     loop {
@@ -43,9 +43,9 @@ pub fn handle_input_from_client(mut reader: BufReader<TcpStream>, mut handler: C
     }
 }
 
-/*
-   Maneja la salida de mensajes al cliente.
-*/
+///
+/// Maneja la salida de mensajes al cliente.
+/// 
 pub fn handle_output_to_client(
     mut writer: BufWriter<TcpStream>,
     receiver: mpsc::Receiver<ClientMessage>,
@@ -71,8 +71,10 @@ pub fn handle_output_to_client(
     }
 }
 
-// Manejadores del protocolo para comunicarse con los clientes
 
+///
+/// Maneja la comunicación del servidor con un cliente
+/// 
 pub struct ClientHandler {
     username: Option<String>,
     id: usize,
@@ -81,6 +83,9 @@ pub struct ClientHandler {
 }
 
 impl ClientHandler {
+    ///
+    /// Crea un nuevo manejador del cliente
+    /// 
     pub fn new(
         id: usize,
         sender: mpsc::Sender<ClientMessage>,
@@ -93,7 +98,10 @@ impl ClientHandler {
             state,
         }
     }
-
+    
+    ///
+    /// Revisa que el cliente se haya identificado
+    /// 
     fn check_username(&self) {
         if self.username.is_none() {
             let reply = ClientMessage::Response {
@@ -129,9 +137,9 @@ impl ClientHandler {
         }
     }
 
-    /*
-       Maneja la identificación de un usuario.
-    */
+    ///
+    /// Maneja la identificación de un usuario.
+    /// 
     fn handle_identify(&mut self, username: String) {
         let reply: ClientMessage;
 

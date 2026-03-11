@@ -2,9 +2,10 @@ use crate::messages::responses::{Operation, Result};
 use crate::status::user::UserStatus;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-/*
-   Los mensajes que recibe el cliente.
-*/
+
+///
+/// Los mensajes que recibe el cliente
+///
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ClientMessage {
