@@ -66,8 +66,10 @@ impl Server {
                                 .unwrap()
                                 .add_client(id, sender.clone());
 
+                            let broadcaster = Arc::clone(&self.broadcaster);
+
                             // Manejar mensajes desde el cliente
-                            let handler = ClientHandler::new(id, sender, state);
+                            let handler = ClientHandler::new(id, sender, state, broadcaster);
                             thread::spawn(|| handle_input_from_client(reader, handler));
 
                             // Manejar mensajes hacia el cliente

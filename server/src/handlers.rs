@@ -7,6 +7,7 @@ use protocol::status::user::UserStatus;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex, mpsc};
+use crate::broadcaster::Broadcaster;
 
 ///
 /// Maneja la entrada de mensajes desde el cliente.
@@ -79,6 +80,7 @@ pub struct ClientHandler {
     id: usize,
     sender: mpsc::Sender<ClientMessage>,
     state: Arc<Mutex<ServerState>>,
+    broadcaster: Arc<Mutex<Broadcaster>>,
 }
 
 impl ClientHandler {
@@ -89,12 +91,14 @@ impl ClientHandler {
         id: usize,
         sender: mpsc::Sender<ClientMessage>,
         state: Arc<Mutex<ServerState>>,
+        broadcaster: Arc<Mutex<Broadcaster>>,
     ) -> Self {
         Self {
             username: None,
             id,
             sender,
             state,
+            broadcaster,
         }
     }
 
@@ -114,7 +118,7 @@ impl ClientHandler {
     }
 
     ///
-    /// Maneja los mensajes que recibe el cliente
+    /// Maneja los mensajes que recibe el servidor.
     ///
     pub fn handle_message(&mut self, msg: ServerMessage) {
         match msg {
@@ -139,11 +143,16 @@ impl ClientHandler {
     ///
     /// Maneja la identificación de un usuario.
     ///
+    /// El servidor recibe la petición de identificar a un cliente con el username dado.
+    ///
+    /// TODO: quitar .unwrap()
+    ///
     fn handle_identify(&mut self, username: String) {
         let reply: ClientMessage;
 
         {
             let mut locked_state = self.state.lock().unwrap();
+
             if locked_state.get_users().contains_key(&username) {
                 reply = ClientMessage::Response {
                     operation: Operation::Identify,
@@ -170,6 +179,14 @@ impl ClientHandler {
             }
         }
         self.sender.send(reply).unwrap();
+
+        // A cada cliente enviarle NEW_USER
+        let alert = ClientMessage::NewUser {
+            username: username.clone(),
+        };
+
+        self.broadcaster.lock().unwrap().send_message_to_all(&alert);
+
     }
 
     ///
@@ -177,6 +194,7 @@ impl ClientHandler {
     ///
     fn handle_status(&mut self, status: UserStatus) {
         self.check_username();
+
     }
 
     ///
