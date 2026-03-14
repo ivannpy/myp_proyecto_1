@@ -324,10 +324,13 @@ impl ClientHandler {
                             username: self.username.clone().unwrap(),
                             roomname: roomname.clone(),
                         };
-                        self.broadcaster
+                        let result = self.broadcaster
                             .lock()
                             .unwrap()
                             .send_message_to(user.get_id(), &reply);
+                        if result.is_err() {
+                            // avisar que no se pudo
+                        }
                     }
                     None => {
                         reply = ClientMessage::Response {
