@@ -42,7 +42,7 @@ impl Room {
 
     ///
     /// Regresa una lista con los nombres de usuario de los usuarios en el cuarto
-    /// 
+    ///
     pub fn get_user_list(&self) -> LinkedList<String> {
         self.users
             .iter()
@@ -50,3 +50,6 @@ impl Room {
             .collect::<LinkedList<String>>()
     }
 }
+
+#[cfg(test)]
+mod tests {}
