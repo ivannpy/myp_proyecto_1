@@ -7,7 +7,7 @@ use protocol::messages::server_message::ServerMessage;
 use protocol::status::user::UserStatus;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{mpsc, Arc, Mutex};
 
 ///
 /// Maneja la entrada de mensajes desde el cliente.
@@ -254,10 +254,14 @@ impl ClientHandler {
                 extra: Some(username_to.clone()),
             };
         }
-        self.broadcaster
+        let result = self
+            .broadcaster
             .lock()
             .unwrap()
             .send_message_to(self.id, &reply);
+        if result.is_err() {
+            println!("No se pudo enviar el mensaje a {}", self.id);
+        }
     }
 
     ///
@@ -324,7 +328,8 @@ impl ClientHandler {
                             username: self.username.clone().unwrap(),
                             roomname: roomname.clone(),
                         };
-                        let result = self.broadcaster
+                        let result = self
+                            .broadcaster
                             .lock()
                             .unwrap()
                             .send_message_to(user.get_id(), &reply);
@@ -380,4 +385,6 @@ impl ClientHandler {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+
+}
