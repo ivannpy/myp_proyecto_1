@@ -27,9 +27,9 @@ impl User {
             username,
             state,
             id,
-        }   
+        }
     }
-    
+
     pub fn set_state(&mut self, new_state: UserStatus) {
         self.state = new_state;
     }
@@ -37,11 +37,11 @@ impl User {
     pub fn get_id(&self) -> usize {
         self.id.clone()
     }
-    
+
     pub fn get_username(&self) -> String {
         self.username.clone()
     }
-    
+
     pub fn get_state(&self) -> UserStatus {
         self.state.clone()
     }

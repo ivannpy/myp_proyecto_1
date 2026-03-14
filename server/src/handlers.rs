@@ -7,7 +7,7 @@ use protocol::messages::server_message::ServerMessage;
 use protocol::status::user::UserStatus;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 
 ///
 /// Maneja la entrada de mensajes desde el cliente.
@@ -181,7 +181,10 @@ impl ClientHandler {
             username: username.clone(),
         };
 
-        self.broadcaster.lock().unwrap().send_message_to_all(&alert);
+        self.broadcaster
+            .lock()
+            .unwrap()
+            .send_message_to_all_except(&self.id, &alert);
     }
 
     ///
@@ -246,6 +249,15 @@ impl ClientHandler {
             reply = ClientMessage::TextFrom {
                 username: username_from,
                 text: text.clone(),
+            };
+            let user_id_to = users.get(&username_to).unwrap().get_id();
+            let result = self
+                .broadcaster
+                .lock()
+                .unwrap()
+                .send_message_to(user_id_to, &reply);
+            if result.is_err() {
+                println!("No se pudo enviar el mensaje a {}", self.id);
             }
         } else {
             reply = ClientMessage::Response {
@@ -253,14 +265,14 @@ impl ClientHandler {
                 result: Result::NoSuchUser,
                 extra: Some(username_to.clone()),
             };
-        }
-        let result = self
-            .broadcaster
-            .lock()
-            .unwrap()
-            .send_message_to(self.id, &reply);
-        if result.is_err() {
-            println!("No se pudo enviar el mensaje a {}", self.id);
+            let result = self
+                .broadcaster
+                .lock()
+                .unwrap()
+                .send_message_to(self.id, &reply);
+            if result.is_err() {
+                println!("No se pudo enviar el mensaje a {}", self.id);
+            }
         }
     }
 
@@ -274,7 +286,10 @@ impl ClientHandler {
             username: self.username.clone().unwrap(),
             text: text.clone(),
         };
-        self.broadcaster.lock().unwrap().send_message_to_all(&reply);
+        self.broadcaster
+            .lock()
+            .unwrap()
+            .send_message_to_all_except(&self.id, &reply);
     }
 
     ///
@@ -385,6 +400,4 @@ impl ClientHandler {
 }
 
 #[cfg(test)]
-mod tests {
-
-}
+mod tests {}

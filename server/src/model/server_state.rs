@@ -1,8 +1,8 @@
+use crate::model::room::Room;
 use crate::model::user::User;
 use protocol::status::user::UserStatus;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use crate::model::room::Room;
 
 ///
 ///   Estado del servidor.
