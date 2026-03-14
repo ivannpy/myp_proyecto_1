@@ -19,13 +19,13 @@ impl NetworkConnection {
         Self { reader, writer };
     }
 
-    fn send_message(&mut self, message: &ServerMessage) {
+    pub fn send_message(&mut self, message: &ServerMessage) {
         let mut msg = serde_json::to_string::<ServerMessage>(message).unwrap();
         msg.push('\n');
         self.writer.write_all(msg.as_bytes()).unwrap();
     }
 
-    fn receive_message(&mut self) -> ClientMessage {
+    pub fn receive_message(&mut self) -> ClientMessage {
         let mut line = String::new();
         self.reader.read_line(&mut line).unwrap();
         serde_json::from_str::<ClientMessage>(&line).unwrap()
