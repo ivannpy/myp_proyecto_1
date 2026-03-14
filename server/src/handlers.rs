@@ -7,7 +7,7 @@ use protocol::messages::server_message::ServerMessage;
 use protocol::status::user::UserStatus;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{mpsc, Arc, Mutex};
 
 ///
 /// Maneja la entrada de mensajes desde el cliente.
@@ -255,7 +255,7 @@ impl ClientHandler {
                 .broadcaster
                 .lock()
                 .unwrap()
-                .send_message_to(user_id_to, &reply);
+                .send_message_to(&user_id_to, &reply);
             if result.is_err() {
                 println!("No se pudo enviar el mensaje a {}", self.id);
             }
@@ -269,7 +269,7 @@ impl ClientHandler {
                 .broadcaster
                 .lock()
                 .unwrap()
-                .send_message_to(self.id, &reply);
+                .send_message_to(&self.id, &reply);
             if result.is_err() {
                 println!("No se pudo enviar el mensaje a {}", self.id);
             }
@@ -347,7 +347,7 @@ impl ClientHandler {
                             .broadcaster
                             .lock()
                             .unwrap()
-                            .send_message_to(user.get_id(), &reply);
+                            .send_message_to(&user.get_id(), &reply);
                         if result.is_err() {
                             // avisar que no se pudo
                         }
@@ -370,6 +370,48 @@ impl ClientHandler {
     ///
     fn handle_join_room(&mut self, roomname: String) {
         self.check_username();
+
+        // Verificar que el cuarto existe
+        let room_exists = true;
+
+        // Verificar que este usuario haya sido invitado al cuarto roomname
+        let is_invited = true;
+
+        let mut reply: ClientMessage;
+
+        if room_exists && is_invited {
+            reply = ClientMessage::Response {
+                operation: Operation::JoinRoom,
+                result: Result::Success,
+                extra: Some(roomname.clone()),
+            };
+            self.sender.send(reply).unwrap();
+
+            let alert = ClientMessage::JoinedRoom {
+                roomname: roomname.clone(),
+                username: self.username.clone().unwrap(),
+            };
+            let result = self
+                .broadcaster
+                .lock()
+                .unwrap()
+                .send_message_to_all_except(&self.id, &alert);
+        }
+        if !room_exists {
+            reply = ClientMessage::Response {
+                operation: Operation::JoinRoom,
+                result: Result::NoSuchRoom,
+                extra: Some(roomname.clone()),
+            };
+            self.sender.send(reply).unwrap();
+        }
+        if !is_invited {
+            reply = ClientMessage::Response {
+                operation: Operation::JoinRoom,
+                result: Result::NotInvited,
+                extra: Some(roomname.clone()),
+            }
+        }
     }
 
     ///

@@ -38,7 +38,7 @@ impl Broadcaster {
     /// Dado el id del cliente, envía un mensaje ClientMessage al cliente vía
     /// el sender registrado para ese cliente.
     ///
-    pub fn send_message_to(&self, id: usize, msg: &ClientMessage) -> Result<(), std::io::Error> {
+    pub fn send_message_to(&self, id: &usize, msg: &ClientMessage) -> Result<(), std::io::Error> {
         let sender = self.clients.get(&id);
         match sender {
             Some(sender) => {
@@ -74,7 +74,7 @@ impl Broadcaster {
         let user = state.get_users().get(username);
         match user {
             Some(user) => {
-                let r = self.send_message_to(user.get_id(), msg);
+                let r = self.send_message_to(&user.get_id(), msg);
                 if r.is_err() {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::Other,
