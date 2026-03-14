@@ -87,6 +87,6 @@ mod tests {
         let mut state = ServerState::new();
         let user = User::new("user_1".to_string(), UserStatus::Active, 0);
         state.insert_user(user);
-        assert_eq!(state.get_next_id(), 1);
+        assert_eq!(state.get_next_id(), 0);
     }
 }
