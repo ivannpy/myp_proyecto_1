@@ -74,7 +74,7 @@ impl Broadcaster {
         let user = state.get_users().get(username);
         match user {
             Some(user) => {
-                let r = self.send_message_to(user.id, msg);
+                let r = self.send_message_to(user.get_id(), msg);
                 if r.is_err() {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::Other,

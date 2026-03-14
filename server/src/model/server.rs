@@ -11,9 +11,9 @@ use std::thread;
 /// Servidor de sockets TCP
 ///
 pub struct Server {
-    pub listener: TcpListener,
-    pub state: Arc<Mutex<ServerState>>,
-    pub broadcaster: Arc<Mutex<Broadcaster>>,
+    listener: TcpListener,
+    state: Arc<Mutex<ServerState>>,
+    broadcaster: Arc<Mutex<Broadcaster>>,
 }
 
 impl Server {

@@ -160,13 +160,9 @@ impl ClientHandler {
                     extra: Some(username.clone()),
                 }
             } else {
-                let user = User {
-                    id: self.id,
-                    state: UserStatus::Active,
-                    username: username.clone(),
-                };
+                let user = User::new(username.clone(), UserStatus::Active, self.id);
 
-                println!("User {} inserted with id {}", username, user.id);
+                println!("User {} inserted with id {}", username, user.get_id());
 
                 locked_state.insert_user(user);
                 self.username = Some(username.clone());
@@ -337,7 +333,7 @@ impl ClientHandler {
                         reply = ClientMessage::Response {
                             operation: Operation::Invite,
                             result: Result::NoSuchUser,
-                            extra: Some(user_to.unwrap().username.clone()),
+                            extra: Some(user_to.unwrap().get_username()),
                         };
                         self.sender.send(reply).unwrap();
                     }

@@ -16,18 +16,34 @@ pub fn validate_username(user: &User) -> bool {
 /// Representa a un usuario en el servidor
 ///
 pub struct User {
-    pub username: String,
-    pub state: UserStatus,
-    pub id: usize,
+    username: String,
+    state: UserStatus,
+    id: usize,
 }
 
 impl User {
+    pub fn new(username: String, state: UserStatus, id: usize) -> Self {
+        Self {
+            username,
+            state,
+            id,
+        }   
+    }
+    
     pub fn set_state(&mut self, new_state: UserStatus) {
         self.state = new_state;
     }
 
     pub fn get_id(&self) -> usize {
-        self.id
+        self.id.clone()
+    }
+    
+    pub fn get_username(&self) -> String {
+        self.username.clone()
+    }
+    
+    pub fn get_state(&self) -> UserStatus {
+        self.state.clone()
     }
 }
 
