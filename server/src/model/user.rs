@@ -21,6 +21,16 @@ pub struct User {
     pub id: usize,
 }
 
+impl User {
+    pub fn set_state(&mut self, new_state: UserStatus) {
+        self.state = new_state;
+    }
+
+    pub fn get_id(&self) -> usize {
+        self.id
+    }
+}
+
 mod tests {
     use super::*;
 

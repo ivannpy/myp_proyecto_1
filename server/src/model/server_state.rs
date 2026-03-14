@@ -1,4 +1,5 @@
 use crate::model::user::User;
+use protocol::status::user::UserStatus;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -40,6 +41,21 @@ impl ServerState {
     ///
     pub fn insert_user(&mut self, user: User) {
         self.users.insert(user.username.clone(), user);
+    }
+
+    pub fn change_user_status(&mut self, username: &str, new_status: UserStatus) {
+        let user = self.users.get_mut(username).unwrap();
+        user.set_state(new_status);
+    }
+
+    pub fn get_users_status(&self) -> HashMap<String, UserStatus> {
+        let status_map = self
+            .users
+            .iter()
+            .map(|(username, user)| (username.clone(), user.state.clone()))
+            .collect::<HashMap<String, UserStatus>>();
+
+        status_map
     }
 }
 

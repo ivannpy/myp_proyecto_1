@@ -101,9 +101,9 @@ impl Broadcaster {
         }
     }
 
-    pub fn send_message_to_all_except(&self, id: usize, msg: &ClientMessage) {
+    pub fn send_message_to_all_except(&self, id: &usize, msg: &ClientMessage) {
         for (id_client, sender) in self.clients.iter() {
-            if id_client != &id {
+            if id_client != id {
                 let r = sender.send(msg.clone());
                 if r.is_err() {
                     println!("Error al enviar mensaje a cliente {}", id_client);

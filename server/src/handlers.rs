@@ -1,3 +1,4 @@
+use crate::broadcaster::Broadcaster;
 use crate::model::server_state::ServerState;
 use crate::model::user::User;
 use protocol::messages::client_message::ClientMessage;
@@ -7,7 +8,6 @@ use protocol::status::user::UserStatus;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex, mpsc};
-use crate::broadcaster::Broadcaster;
 
 ///
 /// Maneja la entrada de mensajes desde el cliente.
@@ -186,29 +186,82 @@ impl ClientHandler {
         };
 
         self.broadcaster.lock().unwrap().send_message_to_all(&alert);
-
     }
 
     ///
     /// Maneja user status
     ///
-    fn handle_status(&mut self, status: UserStatus) {
+    /// TODO: quitar .unwrap()
+    ///
+    fn handle_status(&mut self, new_status: UserStatus) {
         self.check_username();
+        let username = self.username.clone().unwrap();
 
+        // Cambia el estado del usuario.
+        self.state
+            .lock()
+            .unwrap()
+            .change_user_status(&username, new_status.clone());
+
+        // Avisar a todos los demás
+        let alert = ClientMessage::NewStatus {
+            username: self.username.clone().unwrap(),
+            status: new_status,
+        };
+
+        self.broadcaster
+            .lock()
+            .unwrap()
+            .send_message_to_all_except(&self.id, &alert);
     }
 
     ///
     /// Maneja users
     ///
+    /// TODO: quitar .unwrap()
+    ///
     fn handle_users(&mut self) {
         self.check_username();
+
+        // Respuesta con los status de los usuarios.
+        let locked_state = self.state.lock().unwrap();
+        let reply = ClientMessage::UserList {
+            users: locked_state.get_users_status(),
+        };
+        self.sender.send(reply).unwrap();
     }
 
     ///
     /// Maneja text
     ///
-    fn handle_text(&mut self, username: String, text: String) {
+    /// username_to es el nombre del usuario que debe recibir el mensaje.
+    ///
+    ///
+    fn handle_text(&mut self, username_to: String, text: String) {
         self.check_username();
+        let username_from = self.username.clone().unwrap();
+
+        let mut reply;
+
+        let locked_state = self.state.lock().unwrap();
+
+        let users = locked_state.get_users();
+        if users.contains_key(&username_to) {
+            reply = ClientMessage::TextFrom {
+                username: username_from,
+                text: text.clone(),
+            }
+        } else {
+            reply = ClientMessage::Response {
+                operation: Operation::Text,
+                result: Result::NoSuchUser,
+                extra: Some(username_to.clone()),
+            };
+        }
+        self.broadcaster
+            .lock()
+            .unwrap()
+            .send_message_to(self.id, &reply);
     }
 
     ///
@@ -216,6 +269,12 @@ impl ClientHandler {
     ///
     fn handle_public_text(&mut self, text: String) {
         self.check_username();
+
+        let reply = ClientMessage::PublicTextFrom {
+            username: self.username.clone().unwrap(),
+            text: text.clone(),
+        };
+        self.broadcaster.lock().unwrap().send_message_to_all(&reply);
     }
 
     ///
@@ -223,6 +282,26 @@ impl ClientHandler {
     ///
     fn handle_new_room(&mut self, roomname: String) {
         self.check_username();
+
+        let reply;
+
+        let created = true;
+        // TODO: Crear cuarto en el servidor
+
+        if created {
+            reply = ClientMessage::Response {
+                operation: Operation::NewRoom,
+                result: Result::Success,
+                extra: Some(roomname.clone()),
+            };
+        } else {
+            reply = ClientMessage::Response {
+                operation: Operation::NewRoom,
+                result: Result::RoomAlreadyExists,
+                extra: Some(roomname.clone()),
+            }
+        }
+        self.sender.send(reply).unwrap();
     }
 
     ///
@@ -230,6 +309,41 @@ impl ClientHandler {
     ///
     fn handle_invite(&mut self, roomname: String, usernames: Vec<String>) {
         self.check_username();
+
+        // Verificar que el cuarto y todos los usuarios existan
+        let room_exist = true;
+
+        let mut reply;
+        let locked_state = self.state.lock().unwrap();
+
+        if room_exist {
+            let users = locked_state.get_users();
+            for username in usernames {
+                // Si el usuario ya está en la sala o ya había sido invitado, ignorar
+                let user_to = users.get(&username);
+
+                match &user_to {
+                    Some(user) => {
+                        reply = ClientMessage::Invitation {
+                            username: self.username.clone().unwrap(),
+                            roomname: roomname.clone(),
+                        };
+                        self.broadcaster
+                            .lock()
+                            .unwrap()
+                            .send_message_to(user.get_id(), &reply);
+                    }
+                    None => {
+                        reply = ClientMessage::Response {
+                            operation: Operation::Invite,
+                            result: Result::NoSuchUser,
+                            extra: Some(user_to.unwrap().username.clone()),
+                        };
+                        self.sender.send(reply).unwrap();
+                    }
+                }
+            }
+        }
     }
 
     ///
