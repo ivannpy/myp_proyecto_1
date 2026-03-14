@@ -7,7 +7,7 @@ use protocol::messages::server_message::ServerMessage;
 use protocol::status::user::UserStatus;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 
 ///
 /// Maneja la entrada de mensajes desde el cliente.
