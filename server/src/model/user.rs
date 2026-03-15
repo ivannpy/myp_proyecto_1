@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use protocol::status::user::UserStatus;
 
 ///
@@ -17,33 +18,43 @@ pub fn validate_username(user: &User) -> bool {
 ///
 pub struct User {
     username: String,
-    state: UserStatus,
+    status: UserStatus,
     id: usize,
+    rooms: HashSet<String>,
+    invitations: HashSet<String>,
 }
 
 impl User {
-    pub fn new(username: String, state: UserStatus, id: usize) -> Self {
+    pub fn new(
+        username: String,
+        status: UserStatus,
+        id: usize,
+        rooms: HashSet<String>,
+        invitations: HashSet<String>,
+    ) -> Self {
         Self {
             username,
-            state,
+            status,
             id,
+            rooms,
+            invitations,
         }
     }
 
-    pub fn set_state(&mut self, new_state: UserStatus) {
-        self.state = new_state;
+    pub fn set_status(&mut self, new_status: UserStatus) {
+        self.status = new_status;
     }
 
     pub fn get_id(&self) -> usize {
-        self.id.clone()
+        self.id
     }
 
     pub fn get_username(&self) -> String {
         self.username.clone()
     }
 
-    pub fn get_state(&self) -> UserStatus {
-        self.state.clone()
+    pub fn get_status(&self) -> UserStatus {
+        self.status.clone()
     }
 }
 
@@ -54,13 +65,17 @@ mod tests {
     fn test_user_username() {
         let user_1 = User {
             username: "12345678".to_string(),
-            state: UserStatus::Active,
+            status: UserStatus::Active,
             id: 0,
+            rooms: HashSet::new(),
+            invitations: HashSet::new(),
         };
         let user_2 = User {
             username: "123456789".to_string(),
-            state: UserStatus::Active,
+            status: UserStatus::Active,
             id: 1,
+            rooms: HashSet::new(),
+            invitations: HashSet::new(),
         };
 
         assert_eq!(validate_username(&user_1), true);

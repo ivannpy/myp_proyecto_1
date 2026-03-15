@@ -22,7 +22,13 @@ impl Server {
     ///
     pub fn new(port: u16) -> Result<Self, std::io::Error> {
         let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
-        let listener = TcpListener::bind(socket_address)?;
+        let listener = match TcpListener::bind(socket_address) {
+            Ok(listener) => listener,
+            Err(e) => {
+                eprintln!("Error al iniciar el servidor en el puerto: {}", port);
+                return Err(e);
+            }
+        };
 
         let state = Arc::new(Mutex::new(ServerState::new()));
         let broadcaster = Arc::new(Mutex::new(Broadcaster::new()));
@@ -50,30 +56,38 @@ impl Server {
                     let socket_clone = socket.try_clone();
                     match socket_clone {
                         Ok(socket_clone) => {
-                            let id = self.state.lock().unwrap().get_next_id();
+                            let id = match self.state.lock() {
+                                Ok(state) => state.get_next_id(),
+                                Err(e) => {
+                                    eprintln!("Error al obtener id: {}", e);
+                                    continue;
+                                }
+                            };
                             let reader = BufReader::new(socket_clone);
                             let writer = BufWriter::new(socket);
                             let (sender, receiver) = mpsc::channel::<ClientMessage>();
                             let state = Arc::clone(&self.state);
+                            let broadcaster = Arc::clone(&self.broadcaster);
 
                             // TODO: incorporar a bitácora
                             println!("Conexion aceptada");
                             println!("\tCliente: {:?}", reader.get_ref().peer_addr());
                             println!("\tPuerto: {:?}", reader.get_ref().peer_addr()?.port());
 
-                            self.broadcaster
-                                .lock()
-                                .unwrap()
-                                .add_client(id, sender.clone());
-
-                            let broadcaster = Arc::clone(&self.broadcaster);
+                            let _ = match self.broadcaster.lock() {
+                                Ok(mut broadcaster) => broadcaster.add_client(&id, sender.clone()),
+                                Err(_) => {
+                                    eprintln!("Error al agregar cliente al broadcaster");
+                                    continue;
+                                }
+                            };
 
                             // Manejar mensajes desde el cliente
-                            let handler = ClientHandler::new(id, sender, state, broadcaster);
-                            thread::spawn(|| handle_input_from_client(reader, handler));
+                            let handler = ClientHandler::new(id, state, broadcaster);
+                            thread::spawn(move || handle_input_from_client(reader, handler));
 
                             // Manejar mensajes hacia el cliente
-                            thread::spawn(|| handle_output_to_client(writer, receiver));
+                            thread::spawn(move || handle_output_to_client(writer, receiver));
                         }
                         Err(e) => {
                             eprintln!("Error clonando socket: {}", e);

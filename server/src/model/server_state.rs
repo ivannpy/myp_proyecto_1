@@ -46,19 +46,34 @@ impl ServerState {
         self.users.insert(user.get_username(), user);
     }
 
-    pub fn change_user_status(&mut self, username: &str, new_status: UserStatus) {
-        let user = self.users.get_mut(username).unwrap();
-        user.set_state(new_status);
+    pub fn change_user_status(&mut self, username: &str, new_status: UserStatus) -> Result<(), std::io::Error>{
+        if let Some(user) = self.users.get_mut(username) {
+            user.set_status(new_status);
+            Ok(())
+        } else {
+            Err(std::io::Error::new(std::io::ErrorKind::NotFound, "User not found"))
+        }
     }
 
     pub fn get_users_status(&self) -> HashMap<String, UserStatus> {
         let status_map = self
             .users
             .iter()
-            .map(|(username, user)| (username.clone(), user.get_state()))
+            .map(|(username, user)| (username.clone(), user.get_status()))
             .collect::<HashMap<String, UserStatus>>();
-
         status_map
+    }
+
+    pub fn get_rooms(&mut self) -> &mut HashMap<String, Room> {
+        &mut self.rooms
+    }
+
+    pub fn remove_user(&mut self, username: &str) -> Option<User> {
+        self.users.remove(username)
+    }
+
+    pub fn get_room_users_status(&self, room: &str) -> HashMap<String, UserStatus> {
+        HashMap::new()
     }
 }
 
@@ -66,6 +81,7 @@ impl ServerState {
 mod tests {
     use super::*;
     use protocol::status::user::UserStatus;
+    use std::collections::HashSet;
 
     #[test]
     fn test_server_init_state() {
@@ -77,7 +93,13 @@ mod tests {
     #[test]
     fn test_server_insert_user() {
         let mut state = ServerState::new();
-        let user = User::new("user_1".to_string(), UserStatus::Active, 0);
+        let user = User::new(
+            "user_1".to_string(),
+            UserStatus::Active,
+            0,
+            HashSet::new(),
+            HashSet::new(),
+        );
         state.insert_user(user);
         assert_eq!(state.get_users().len(), 1);
     }
@@ -85,7 +107,13 @@ mod tests {
     #[test]
     fn test_server_counter_after_insert() {
         let mut state = ServerState::new();
-        let user = User::new("user_1".to_string(), UserStatus::Active, 0);
+        let user = User::new(
+            "user_1".to_string(),
+            UserStatus::Active,
+            0,
+            HashSet::new(),
+            HashSet::new(),
+        );
         state.insert_user(user);
         assert_eq!(state.get_next_id(), 0);
     }

@@ -1,7 +1,6 @@
-use crate::model::server_state::ServerState;
 use protocol::messages::client_message::ClientMessage;
 use std::collections::HashMap;
-use std::sync::mpsc;
+use std::sync::{mpsc};
 
 ///
 /// Para desacoplar a los usuarios del canal que usa su cliente y el servidor para comunicarse.
@@ -23,8 +22,8 @@ impl Broadcaster {
     /// Un cliente se identifica por su id único y su canal de comunicación con el
     /// servidor es el sender.
     ///
-    pub fn add_client(&mut self, id: usize, sender: mpsc::Sender<ClientMessage>) {
-        self.clients.insert(id, sender);
+    pub fn add_client(&mut self, id: &usize, sender: mpsc::Sender<ClientMessage>) {
+        self.clients.insert(id.clone(), sender);
     }
 
     ///
@@ -33,28 +32,14 @@ impl Broadcaster {
     pub fn remove_client(&mut self, id: usize) {
         self.clients.remove(&id);
     }
-
-    ///
-    /// Dado el id del cliente, envía un mensaje ClientMessage al cliente vía
-    /// el sender registrado para ese cliente.
-    ///
+    
     pub fn send_message_to(&self, id: &usize, msg: &ClientMessage) -> Result<(), std::io::Error> {
-        let sender = self.clients.get(&id);
-        match sender {
-            Some(sender) => {
-                let r = sender.send(msg.clone());
-                if r.is_err() {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "Error al enviar mensaje",
-                    ));
-                }
-                Ok(())
-            }
-            None => Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Cliente no registrado",
-            )),
+        let sender = self.clients.get(id);
+        if let Some(sender) = sender {
+            sender.send(msg.clone());
+            Ok(())
+        } else {
+            Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Cliente no registrado"))
         }
     }
 
@@ -67,27 +52,15 @@ impl Broadcaster {
     ///
     pub fn send_message_to_user(
         &self,
-        username: &str,
+        user_id: &usize,
         msg: &ClientMessage,
-        state: &ServerState,
     ) -> Result<(), std::io::Error> {
-        let user = state.get_users().get(username);
-        match user {
-            Some(user) => {
-                let r = self.send_message_to(&user.get_id(), msg);
-                if r.is_err() {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "Error al enviar mensaje",
-                    ));
-                }
-            }
-            None => {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    "Usuario no encontrado",
-                ));
-            }
+        let r = self.send_message_to(user_id, msg);
+        if r.is_err() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Error al enviar mensaje",
+            ));
         }
         Ok(())
     }
@@ -109,6 +82,12 @@ impl Broadcaster {
                     println!("Error al enviar mensaje a cliente {}", id_client);
                 }
             }
+        }
+    }
+
+    pub fn send_message_to_room(&self, ids: Vec<usize>, msg: &ClientMessage) {
+        for id in ids {
+            let _ = self.send_message_to(&id, msg);
         }
     }
 }
