@@ -12,7 +12,7 @@ use std::process;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let port: u16;
-    
+
     if args.len() == 1 {
         port = 1234;
     } else {
@@ -28,7 +28,7 @@ fn main() {
             }
         };
     }
-    
+
     let server = Server::new(port);
     server.and_then(|s| s.run()).expect("No se pudo iniciar");
 }

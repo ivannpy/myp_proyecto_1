@@ -1,4 +1,10 @@
-use std::collections::{HashMap};
+use std::collections::{HashMap, HashSet};
+
+pub const MAX_ROOM_NAME_LEN: usize = 16;
+
+pub fn validate_room_name(room: &str) -> bool {
+    room.len() <= MAX_ROOM_NAME_LEN
+}
 
 ///
 /// Modela un cuarto dentro del servidor
@@ -6,7 +12,7 @@ use std::collections::{HashMap};
 pub struct Room {
     users: HashMap<usize, String>,
     room_name: String,
-    invited: HashMap<usize, String>,
+    invited: HashSet<String>,
 }
 
 impl Room {
@@ -17,7 +23,7 @@ impl Room {
         Self {
             users: HashMap::new(),
             room_name,
-            invited: HashMap::new(),
+            invited: HashSet::new(),
         }
     }
 
@@ -48,16 +54,23 @@ impl Room {
     pub fn get_users(&self) -> HashMap<usize, String> {
         self.users.clone()
     }
-    
+
     pub fn get_room_name(&self) -> String {
         self.room_name.clone()
     }
-    
+
     ///
     /// Verifica si un username está en los invitados
-    /// 
+    ///
     pub fn is_invited(&self, username: &str) -> bool {
-        self.invited.values().any(|u| u == username)
+        self.invited.contains(username)
+    }
+    
+    ///
+    /// Agrega a un usuario a la lista de invitados
+    /// 
+    pub fn invite_user(&mut self, username: &str) {
+        self.invited.insert(username.to_string());   
     }
 }
 

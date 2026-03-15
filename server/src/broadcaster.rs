@@ -1,6 +1,6 @@
 use protocol::messages::client_message::ClientMessage;
 use std::collections::HashMap;
-use std::sync::{mpsc};
+use std::sync::mpsc;
 
 ///
 /// Para desacoplar a los usuarios del canal que usa su cliente y el servidor para comunicarse.
@@ -32,45 +32,17 @@ impl Broadcaster {
     pub fn remove_client(&mut self, id: usize) {
         self.clients.remove(&id);
     }
-    
+
     pub fn send_message_to(&self, id: &usize, msg: &ClientMessage) -> Result<(), std::io::Error> {
         let sender = self.clients.get(id);
         if let Some(sender) = sender {
-            sender.send(msg.clone());
+            let _ = sender.send(msg.clone());
             Ok(())
         } else {
-            Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Cliente no registrado"))
-        }
-    }
-
-    ///
-    /// Dado el nombre de usuario del cliente, envía un mensaje ClienteMessage a ese cliente.
-    ///
-    /// Enviar un mensaje a un usuario puede efectuarse con dos resultados
-    /// Ok - Se encontró el usuario y se envió el mensaje
-    /// Err - No se encontró el usuario o no se pudo enviar el mensaje
-    ///
-    pub fn send_message_to_user(
-        &self,
-        user_id: &usize,
-        msg: &ClientMessage,
-    ) -> Result<(), std::io::Error> {
-        let r = self.send_message_to(user_id, msg);
-        if r.is_err() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Error al enviar mensaje",
-            ));
-        }
-        Ok(())
-    }
-
-    pub fn send_message_to_all(&self, msg: &ClientMessage) {
-        for (id, sender) in self.clients.iter() {
-            let r = sender.send(msg.clone());
-            if r.is_err() {
-                println!("Error al enviar mensaje a cliente {}", id);
-            }
+            Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Cliente no registrado",
+            ))
         }
     }
 

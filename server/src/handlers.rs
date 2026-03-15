@@ -1,12 +1,12 @@
 use crate::broadcaster::Broadcaster;
-use crate::model::room::Room;
+use crate::model::room::{Room, validate_room_name};
 use crate::model::server_state::ServerState;
-use crate::model::user::User;
+use crate::model::user::{User, validate_username};
 use protocol::messages::client_message::ClientMessage;
 use protocol::messages::responses::{Operation, Result};
 use protocol::messages::server_message::ServerMessage;
 use protocol::status::user::UserStatus;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex, mpsc};
@@ -67,6 +67,7 @@ pub fn handle_output_to_client(
                 }
             }
             Err(e) => {
+                // Agregar al usuario a la lista del servidor
                 eprintln!("Error serializando ClientMessage: {}", e);
                 continue;
             }
@@ -127,7 +128,7 @@ impl ClientHandler {
     ///
     fn reply_to_client(&self, reply: &ClientMessage) {
         match self.broadcaster.lock() {
-            Ok(mut b) => {
+            Ok(b) => {
                 let _ = b.send_message_to(&self.id, reply);
             }
             Err(_) => {}
@@ -139,7 +140,7 @@ impl ClientHandler {
     ///
     fn alert_to_others(&self, alert: &ClientMessage) {
         match self.broadcaster.lock() {
-            Ok(mut b) => {
+            Ok(b) => {
                 let _ = b.send_message_to_all_except(&self.id, alert);
             }
             Err(_) => {}
@@ -158,7 +159,7 @@ impl ClientHandler {
                         ids_in_room.push(id);
                     }
                     match self.broadcaster.lock() {
-                        Ok(mut b) => {
+                        Ok(b) => {
                             let _ = b.send_message_to_room(ids_in_room, msg);
                         }
                         Err(_) => {}
@@ -176,7 +177,7 @@ impl ClientHandler {
         let mut ids_to_send = Vec::new();
 
         match self.state.lock() {
-            Ok(mut state) => {
+            Ok(state) => {
                 let users = state.get_users();
                 for username in usernames {
                     if let Some(user) = users.get(username) {
@@ -184,7 +185,7 @@ impl ClientHandler {
                     }
                 }
                 match self.broadcaster.lock() {
-                    Ok(mut b) => {
+                    Ok(b) => {
                         let _ = b.send_message_to_room(ids_to_send, msg);
                     }
                     Err(_) => {}
@@ -225,7 +226,7 @@ impl ClientHandler {
     ///
     fn verify_user_exist(&self, usernames: &str) -> bool {
         match self.state.lock() {
-            Ok(mut state) => state.get_users().contains_key(usernames),
+            Ok(state) => state.get_users().contains_key(usernames),
             Err(_) => false,
         }
     }
@@ -242,7 +243,19 @@ impl ClientHandler {
                     false
                 }
             }
-            Err(_) => {false},
+            Err(_) => false,
+        }
+    }
+
+    ///
+    /// Agrega a un usuario al servidor
+    ///
+    fn add_user_to_server(&self, user: User) {
+        match self.state.lock() {
+            Ok(mut state) => {
+                state.insert_user(user);
+            }
+            Err(_) => {}
         }
     }
 
@@ -274,17 +287,52 @@ impl ClientHandler {
                     }
                 }
             }
-            Err(e) => {}
+            Err(_) => {}
+        }
+    }
+
+    ///
+    /// Elimia a un usuario del servidor
+    ///
+    fn delete_user_from_server(&self, username: &str) {
+        match self.state.lock() {
+            Ok(mut state) => {
+                state.remove_user(username);
+            }
+            Err(_) => {}
+        }
+    }
+
+    ///
+    /// Actualiza el status de un usuario en el servidor
+    ///
+    fn update_user_status(&self, username: &str, new_status: UserStatus) {
+        match self.state.lock() {
+            Ok(mut status) => {
+                let _ = status.change_user_status(username, new_status);
+            }
+            Err(_) => {}
         }
     }
 
     ///
     /// Regresa la lista de cuartos donde está un usuario dado
     ///
-
     fn get_rooms_user_is_in(&self, username: &str) -> Vec<String> {
-        let rooms = Vec::new();
-        rooms
+        let mut user_rooms = Vec::new();
+        match self.state.lock() {
+            Ok(mut state) => {
+                let server_rooms = state.get_rooms();
+                for (name, room) in server_rooms {
+                    if room.is_in(&username) {
+                        user_rooms.push(name.clone());
+                    }
+                }
+            }
+            Err(_) => {}
+        }
+
+        user_rooms
     }
 
     ///
@@ -309,6 +357,59 @@ impl ClientHandler {
             Err(_) => {}
         }
         room_status
+    }
+
+    ///
+    /// Regresa un diccionario con los estados de todos los usuarios
+    ///
+    fn get_user_list(&self) -> HashMap<String, UserStatus> {
+        let mut users_status = HashMap::new();
+
+        match self.state.lock() {
+            Ok(state) => {
+                users_status = state.get_users_status();
+            }
+            Err(_) => {}
+        }
+        users_status
+    }
+
+    ///
+    /// Crea un nuevo cuarto en el servidor
+    ///
+    fn add_new_room(&self, username: &str, roomname: &str) {
+        let mut new_room = Room::new(roomname.to_string());
+        new_room.add_user(username, self.id);
+        match self.state.lock() {
+            Ok(mut state) => state.add_new_room(new_room),
+            Err(_) => {}
+        }
+    }
+
+    ///
+    /// Eliminar cliente del broadcaster
+    ///
+    fn remove_client(&self) {
+        match self.broadcaster.lock() {
+            Ok(mut b) => {
+                let _ = b.remove_client(self.id);
+            }
+            Err(_) => {}
+        }
+    }
+
+    ///
+    /// Agrega a usuarios a la lista de invitados
+    ///
+    fn invite_to_room(&self, username: &str, roomname: &str) {
+        match self.state.lock() {
+            Ok(mut state) => {
+                if let Some(room) = state.get_rooms().get_mut(roomname) {
+                    room.invite_user(username);
+                }
+            }
+            Err(_) => {}
+        }
     }
 
     ///
@@ -346,50 +447,53 @@ impl ClientHandler {
     fn handle_identify(&mut self, username: &str) {
         let reply: ClientMessage;
 
-        // Todo: mover este lock a otra funcion
-        match self.state.lock() {
-            Ok(mut state) => {
-                if state.user_is_online(username) {
-                    reply = ClientMessage::Response {
-                        operation: Operation::Identify,
-                        result: Result::UserAlreadyExists,
-                        extra: Some(username.to_string()),
-                    };
-                    self.reply_to_client(&reply);
-                } else {
-                    let user = User::new(
-                        username.to_string(),
-                        UserStatus::Active,
-                        self.id,
-                        HashSet::new(),
-                        HashSet::new(),
-                    );
-
-                    state.insert_user(user);
-                    self.username = Some(username.to_string());
-
-                    reply = ClientMessage::Response {
-                        operation: Operation::Identify,
-                        result: Result::Success,
-                        extra: Some(username.to_string()),
-                    };
-                    self.reply_to_client(&reply);
-
-                    // A cada cliente enviarle NEW_USER
-                    let alert = ClientMessage::NewUser {
-                        username: username.to_string(),
-                    };
-                    self.alert_to_others(&alert);
-                }
-            }
-            Err(_) => {}
+        if !validate_username(username) {
+            return;
         }
+
+        // Verificamos si ya hay algún usuario con ese nombre
+        let user_exists = self.verify_user_exist(&username);
+
+        if user_exists {
+            reply = ClientMessage::Response {
+                operation: Operation::Identify,
+                result: Result::UserAlreadyExists,
+                extra: Some(username.to_string()),
+            };
+            self.reply_to_client(&reply);
+            return;
+        }
+
+        // El usuario por registrar aún no existe.
+
+        let user = User::new(
+            username.to_string(),
+            UserStatus::Active,
+            self.id,
+        );
+
+        // Agregar al usuario a la lista del servidor
+        self.add_user_to_server(user);
+
+        // Identificamos al este handler
+        self.username = Some(username.to_string());
+
+        reply = ClientMessage::Response {
+            operation: Operation::Identify,
+            result: Result::Success,
+            extra: Some(username.to_string()),
+        };
+        self.reply_to_client(&reply);
+
+        // Avisamos a todos los demás
+        let alert = ClientMessage::NewUser {
+            username: username.to_string(),
+        };
+        self.alert_to_others(&alert);
     }
 
     ///
     /// Maneja user status
-    ///
-    ///
     ///
     fn handle_status(&mut self, new_status: UserStatus) {
         let username = match self.check_username() {
@@ -397,43 +501,31 @@ impl ClientHandler {
             None => return,
         };
 
-        // TODO: Mover este lock a otra funcion
-        match self.state.lock() {
-            Ok(mut status) => match status.change_user_status(&username, new_status.clone()) {
-                Ok(_) => {
-                    let alert = ClientMessage::NewStatus {
-                        username,
-                        status: new_status,
-                    };
-                    // Si cambia exitosamente, alertamos a los demás
-                    self.alert_to_others(&alert);
-                }
-                Err(_) => {}
-            },
-            Err(_) => {}
-        }
+        // Cambiamos el status
+        self.update_user_status(&username, new_status.clone());
+
+        // Alertamos a los demás
+        let alert = ClientMessage::NewStatus {
+            username,
+            status: new_status,
+        };
+        self.alert_to_others(&alert);
     }
 
     ///
     /// Maneja users
     ///
     fn handle_users(&mut self) {
-        let username = match self.check_username() {
+        let _ = match self.check_username() {
             Some(username) => username,
             None => return,
         };
 
-        // Respuesta con los status de los usuarios.
-        // TODO: mover este lock a otra funcion
-        match self.state.lock() {
-            Ok(state) => {
-                let reply = ClientMessage::UserList {
-                    users: state.get_users_status(),
-                };
-                self.reply_to_client(&reply);
-            }
-            Err(_) => {}
-        }
+        let users_status = self.get_user_list();
+        let reply = ClientMessage::UserList {
+            users: users_status,
+        };
+        self.reply_to_client(&reply);
     }
 
     ///
@@ -451,31 +543,24 @@ impl ClientHandler {
 
         let reply: ClientMessage;
 
-        // TODO: mover este lock a otra funcion
-
-        match self.state.lock() {
-            Ok(state) => {
-                // Verificar que el destinatario exista en el servidor
-                if let Some(_) = state.get_users().get(&username_to.to_string()) {
-                    reply = ClientMessage::TextFrom {
-                        username: username_from,
-                        text: text.to_string(),
-                    };
-                    // Responder a user_to
-                    self.send_to_users(vec![username_to], &reply);
-                } else {
-                    // El usuario no existe en el servidor
-                    reply = ClientMessage::Response {
-                        operation: Operation::Text,
-                        result: Result::NoSuchUser,
-                        extra: Some(username_to.to_string()),
-                    };
-                    // Responder al cliente
-                    self.reply_to_client(&reply);
-                }
-            }
-            Err(_) => {}
+        // Verificar que el destinatario exista en el servidor
+        let user_exists = self.verify_user_exist(&username_to);
+        if !user_exists {
+            reply = ClientMessage::Response {
+                operation: Operation::Text,
+                result: Result::NoSuchUser,
+                extra: Some(username_to.to_string()),
+            };
+            self.reply_to_client(&reply);
+            return;
         }
+
+        // El destinatario existe
+        reply = ClientMessage::TextFrom {
+            username: username_from.to_string(),
+            text: text.to_string(),
+        };
+        self.send_to_users(vec![username_to], &reply);
     }
 
     ///
@@ -503,36 +588,33 @@ impl ClientHandler {
             None => return,
         };
 
+        if !validate_room_name(roomname) {
+            return;
+        }
+
         let reply: ClientMessage;
 
-        // Crear el cuarto
-        // TODO: mover este lock a otra funcion
-        match self.state.lock() {
-            Ok(mut state) => {
-                let mut rooms = state.get_rooms();
-                // Si el cuarto ya existe
-                if rooms.contains_key(&roomname.to_string()) {
-                    reply = ClientMessage::Response {
-                        operation: Operation::NewRoom,
-                        result: Result::RoomAlreadyExists,
-                        extra: Some(roomname.to_string()),
-                    };
-                } else {
-                    // Si no existe, crearlo
-                    let mut room = Room::new(roomname.to_string());
-                    // Quien lo crea, está en el cuarto
-                    room.add_user(&username, self.id);
-                    rooms.insert(roomname.to_string(), room);
-                    reply = ClientMessage::Response {
-                        operation: Operation::NewRoom,
-                        result: Result::Success,
-                        extra: Some(roomname.to_string()),
-                    };
-                }
-                self.reply_to_client(&reply);
-            }
-            Err(_) => {}
+        // Verificar si el cuarto ya existe
+        let room_exists = self.verify_room_exists(&roomname);
+        if room_exists {
+            reply = ClientMessage::Response {
+                operation: Operation::NewRoom,
+                result: Result::RoomAlreadyExists,
+                extra: Some(roomname.to_string()),
+            };
+            self.reply_to_client(&reply);
+            return;
         }
+
+        // El cuarto no existe
+
+        self.add_new_room(&username, &roomname);
+        reply = ClientMessage::Response {
+            operation: Operation::NewRoom,
+            result: Result::Success,
+            extra: Some(roomname.to_string()),
+        };
+        self.reply_to_client(&reply);
     }
 
     ///
@@ -559,6 +641,7 @@ impl ClientHandler {
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
+            return;
         }
 
         // El cuarto existe
@@ -589,14 +672,15 @@ impl ClientHandler {
             self.reply_to_client(&reply);
         }
 
+        // Agregarlos a la lista de invitados del cuarto
+        self.invite_to_room(&username, &roomname);
+
         // Enviar invitación a usuarios existentes que no están en el cuarto
         reply = ClientMessage::Invitation {
             username: username.to_string(),
-            roomname: roomname.to_string()
+            roomname: roomname.to_string(),
         };
-
         self.send_to_users(users_to_invite, &reply);
-
     }
 
     ///
@@ -608,7 +692,7 @@ impl ClientHandler {
             None => return,
         };
 
-        let mut reply: ClientMessage;
+        let reply: ClientMessage;
 
         // Verificar que el cuarto existe
         let room_exists = self.verify_room_exists(&roomname);
@@ -626,7 +710,6 @@ impl ClientHandler {
 
         // Verificar que este usuario haya sido invitado al cuarto roomname
         let is_invited = self.verify_user_invited(&username, &roomname);
-
         if !is_invited {
             reply = ClientMessage::Response {
                 operation: Operation::JoinRoom,
@@ -655,7 +738,6 @@ impl ClientHandler {
             roomname: roomname.to_string(),
         };
         self.send_to_room(&roomname, &alert)
-
     }
 
     ///
@@ -667,7 +749,7 @@ impl ClientHandler {
             None => return,
         };
 
-        let mut reply: ClientMessage;
+        let reply: ClientMessage;
 
         // Verificar que el cuarto existe
         let room_exists = self.verify_room_exists(&roomname);
@@ -684,8 +766,6 @@ impl ClientHandler {
         // El cuarto existe
 
         let user_in_room = self.verify_is_in_room(&username, &roomname);
-
-        // El usuario no está en el cuarto
         if !user_in_room {
             reply = ClientMessage::Response {
                 operation: Operation::RoomUsers,
@@ -702,7 +782,6 @@ impl ClientHandler {
             users: self.get_user_list_room(&roomname),
         };
         self.reply_to_client(&reply);
-
     }
 
     ///
@@ -757,7 +836,7 @@ impl ClientHandler {
             None => return,
         };
 
-        let mut reply: ClientMessage;
+        let reply: ClientMessage;
 
         // Verificar que el cuarto existe
         let room_exists = self.verify_room_exists(&roomname);
@@ -792,7 +871,6 @@ impl ClientHandler {
             username,
         };
         self.send_to_room(&roomname, &alert);
-
     }
 
     ///
@@ -804,27 +882,31 @@ impl ClientHandler {
             None => return,
         };
 
-
-        // Eliminarlo de la lista de usuarios
-        self.state.lock().unwrap().remove_user(&username);
-
-        // Eliminarlo de todos los cuartos donde esté.
-        for room in self.state.lock().unwrap().get_rooms().keys() {
-            self.delete_user_from_room(&username, room)
+        // Eliminarlo de todos los cuartos donde esté y avisar
+        let mut alert: ClientMessage;
+        let user_rooms = self.get_rooms_user_is_in(&username);
+        for room_name in user_rooms {
+            self.delete_user_from_room(&username, &room_name);
+            alert = ClientMessage::LeftRoom {
+                roomname: room_name.to_string(),
+                username: username.to_string(),
+            };
+            self.send_to_room(room_name.as_str(), &alert);
         }
 
+        // Eliminarlo de la lista de usuarios
+        self.delete_user_from_server(&username);
+
         // Avisar que se desconectó
-        let alert = ClientMessage::Disconnected {
+        alert = ClientMessage::Disconnected {
             username: username.to_string(),
         };
         self.alert_to_others(&alert);
 
-        // Avisar a todos los cuartos donde estaba
-
+        // Eliminarlo del broadcaster
+        self.remove_client();
 
         // Desconectar el cliente
-        // Eliminarlo del broadcaster
-
     }
 }
 
