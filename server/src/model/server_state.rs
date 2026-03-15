@@ -38,6 +38,10 @@ impl ServerState {
     pub fn get_users(&self) -> &HashMap<String, User> {
         &self.users
     }
+    
+    pub fn user_is_online(&self, username: &str) -> bool {
+        self.users.contains_key(username)
+    }
 
     ///
     /// Agrega un nuevo usuario a los usuarios activos.

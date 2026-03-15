@@ -52,6 +52,13 @@ impl Room {
     pub fn get_room_name(&self) -> String {
         self.room_name.clone()
     }
+    
+    ///
+    /// Verifica si un username está en los invitados
+    /// 
+    pub fn is_invited(&self, username: &str) -> bool {
+        self.invited.values().any(|u| u == username)
+    }
 }
 
 #[cfg(test)]
