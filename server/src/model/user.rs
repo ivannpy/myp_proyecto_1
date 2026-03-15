@@ -22,11 +22,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(
-        username: String,
-        status: UserStatus,
-        id: usize,
-    ) -> Self {
+    pub fn new(username: String, status: UserStatus, id: usize) -> Self {
         Self {
             username,
             status,

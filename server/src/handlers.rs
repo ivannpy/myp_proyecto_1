@@ -466,11 +466,7 @@ impl ClientHandler {
 
         // El usuario por registrar aún no existe.
 
-        let user = User::new(
-            username.to_string(),
-            UserStatus::Active,
-            self.id,
-        );
+        let user = User::new(username.to_string(), UserStatus::Active, self.id);
 
         // Agregar al usuario a la lista del servidor
         self.add_user_to_server(user);

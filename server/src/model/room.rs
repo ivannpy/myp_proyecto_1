@@ -65,12 +65,12 @@ impl Room {
     pub fn is_invited(&self, username: &str) -> bool {
         self.invited.contains(username)
     }
-    
+
     ///
     /// Agrega a un usuario a la lista de invitados
-    /// 
+    ///
     pub fn invite_user(&mut self, username: &str) {
-        self.invited.insert(username.to_string());   
+        self.invited.insert(username.to_string());
     }
 }
 
