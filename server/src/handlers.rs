@@ -44,6 +44,7 @@ pub fn handle_input_from_client(mut reader: BufReader<TcpStream>, mut handler: C
             }
         }
     }
+    handler.handle_disconnect();
 }
 
 ///
@@ -151,20 +152,23 @@ impl ClientHandler {
     /// Envía un mensaje a todos los usuarios de un cuarto
     ///
     fn send_to_room(&self, roomname: &str, msg: &ClientMessage) {
-        let mut ids_in_room = Vec::new();
-        match self.state.lock() {
-            Ok(mut state) => {
-                if let Some(room) = state.get_rooms().get(roomname) {
-                    for (id, _) in room.get_users() {
-                        ids_in_room.push(id);
-                    }
-                    match self.broadcaster.lock() {
-                        Ok(b) => {
-                            let _ = b.send_message_to_room(ids_in_room, msg);
-                        }
-                        Err(_) => {}
+        let ids_in_room = {
+            match self.state.lock() {
+                Ok(mut state) => {
+                    if let Some(room) = state.get_rooms().get(roomname) {
+                        room.get_users().keys().cloned().collect::<Vec<_>>()
+                    } else {
+                        return;
                     }
                 }
+                Err(_) => return,
+            }
+        };
+
+        // state lock liberado aquí
+        match self.broadcaster.lock() {
+            Ok(b) => {
+                b.send_message_to_room(ids_in_room, msg);
             }
             Err(_) => {}
         }
@@ -174,22 +178,22 @@ impl ClientHandler {
     /// Envía un mensaje a todos los usuarios dados
     ///
     fn send_to_users(&self, usernames: Vec<&str>, msg: &ClientMessage) {
-        let mut ids_to_send = Vec::new();
-
-        match self.state.lock() {
-            Ok(state) => {
-                let users = state.get_users();
-                for username in usernames {
-                    if let Some(user) = users.get(username) {
-                        ids_to_send.push(user.get_id());
-                    }
+        let ids_to_send = {
+            match self.state.lock() {
+                Ok(state) => {
+                    let users = state.get_users();
+                    usernames
+                        .iter()
+                        .filter_map(|username| users.get(*username).map(|u| u.get_id()))
+                        .collect::<Vec<_>>()
                 }
-                match self.broadcaster.lock() {
-                    Ok(b) => {
-                        let _ = b.send_message_to_room(ids_to_send, msg);
-                    }
-                    Err(_) => {}
-                }
+                Err(_) => return,
+            }
+        };
+        // state lock liberado aquí
+        match self.broadcaster.lock() {
+            Ok(b) => {
+                b.send_message_to_room(ids_to_send, msg);
             }
             Err(_) => {}
         }
@@ -266,7 +270,7 @@ impl ClientHandler {
         match self.state.lock() {
             Ok(mut state) => {
                 if let Some(room) = state.get_rooms().get_mut(roomname) {
-                    room.add_user(username, self.id);
+                    room.add_user(username, &self.id);
                 }
             }
             Err(_) => {}
@@ -279,9 +283,8 @@ impl ClientHandler {
     fn delete_user_from_room(&self, username: &str, roomname: &str) {
         match self.state.lock() {
             Ok(mut state) => {
-                if let Some(user) = state.get_users().get(username) {
-                    let user_id = user.get_id();
-
+                let user_id = state.get_users().get(username).map(|u| u.get_id());
+                if let Some(user_id) = user_id {
                     if let Some(room) = state.get_rooms().get_mut(roomname) {
                         room.remove_user(&user_id);
                     }
@@ -379,7 +382,7 @@ impl ClientHandler {
     ///
     fn add_new_room(&self, username: &str, roomname: &str) {
         let mut new_room = Room::new(roomname.to_string());
-        new_room.add_user(username, self.id);
+        new_room.add_user(username, &self.id);
         match self.state.lock() {
             Ok(mut state) => state.add_new_room(new_room),
             Err(_) => {}
@@ -448,6 +451,12 @@ impl ClientHandler {
         let reply: ClientMessage;
 
         if !validate_username(username) {
+            reply = ClientMessage::Response {
+                operation: Operation::Identify,
+                result: OperationResult::Invalid,
+                extra: Some("Nombre de usuario demasiado largo".to_string()),
+            };
+            self.reply_to_client(&reply);
             return;
         }
 
@@ -585,6 +594,12 @@ impl ClientHandler {
         };
 
         if !validate_room_name(roomname) {
+            let reply = ClientMessage::Response {
+                operation: Operation::NewRoom,
+                result: OperationResult::Invalid,
+                extra: Some("Nombre de cuarto demasiado largo".to_string()),
+            };
+            self.reply_to_client(&reply);
             return;
         }
 
@@ -624,11 +639,6 @@ impl ClientHandler {
 
         let mut reply: ClientMessage;
 
-        // Si no está en el cuarto no puede invitar
-        if !self.verify_is_in_room(&username, &roomname) {
-            return;
-        }
-
         // Si el cuarto no existe
         if !self.verify_room_exists(&roomname) {
             reply = ClientMessage::Response {
@@ -641,6 +651,17 @@ impl ClientHandler {
         }
 
         // El cuarto existe
+
+        // Si no está en el cuarto no puede invitar
+        if !self.verify_is_in_room(&username, &roomname) {
+            reply = ClientMessage::Response {
+                operation: Operation::Invite,
+                result: OperationResult::NotJoined,
+                extra: Some(roomname.to_string()),
+            };
+            self.reply_to_client(&reply);
+            return;
+        }
 
         // Usuarios que no están en el cuarto
         let mut users_to_invite = Vec::new();
@@ -870,9 +891,8 @@ impl ClientHandler {
             username: username.to_string(),
         };
         self.send_to_room(&roomname, &alert);
-        
-        self.delete_user_from_room(&username, &roomname);
 
+        self.delete_user_from_room(&username, &roomname);
     }
 
     ///

@@ -7,9 +7,11 @@ use std::net::{SocketAddr, TcpListener};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 
-///
 /// Servidor de sockets TCP
 ///
+/// - `listener`: El socket de escucha del servidor
+/// - `state`: El estado del servidor
+/// - `broadcaster`: El mensajeador del servidor
 pub struct Server {
     listener: TcpListener,
     state: Arc<Mutex<ServerState>>,
@@ -17,9 +19,9 @@ pub struct Server {
 }
 
 impl Server {
+    /// Crea un nuevo servidor de sockets en el puerto dado.
     ///
-    /// Crea un nuevo servidor de sockets
-    ///
+    /// - `port`: El puerto en el que se va a iniciar el servidor
     pub fn new(port: u16) -> Result<Self, std::io::Error> {
         let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
         let listener = match TcpListener::bind(socket_address) {
@@ -40,9 +42,7 @@ impl Server {
         })
     }
 
-    ///
     /// Levanta el servidor de sockets TCP
-    ///
     pub fn run(&self) -> Result<(), std::io::Error> {
         println!(
             "Servidor {} escuchando en el puerto {}",
