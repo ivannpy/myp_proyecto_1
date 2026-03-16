@@ -54,7 +54,7 @@ impl ServerState {
             user.set_status(new_status);
         }
     }
-    
+
     /// Regresa un diccionario con el status de todos los usuarios
     pub fn get_users_status(&self) -> HashMap<String, UserStatus> {
         let status_map = self
@@ -64,23 +64,23 @@ impl ServerState {
             .collect::<HashMap<String, UserStatus>>();
         status_map
     }
-    
+
     /// Regresa una referencia mutable a los cuartos creados en el servidor.
     pub fn get_rooms(&mut self) -> &mut HashMap<String, Room> {
         &mut self.rooms
     }
-    
+
     /// Elimina un usuario del servidor
-    /// 
+    ///
     /// - `username`: El usuario a eliminar.
-    /// 
+    ///
     /// Regresa true si el usuario fue eliminado exitosamente, false si no se encontró el usuario.
     pub fn remove_user(&mut self, username: &str) -> bool {
         self.users.remove(username).is_some()
     }
-    
+
     /// Agrega un nuevo cuarto al servidor.
-    /// 
+    ///
     /// - `room`: El cuarto a agregar.
     pub fn add_new_room(&mut self, room: Room) {
         self.rooms.insert(room.get_room_name(), room);

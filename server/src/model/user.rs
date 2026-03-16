@@ -28,24 +28,24 @@ impl User {
             id,
         }
     }
-    
+
     /// Establece el estado del usuario
-    /// 
+    ///
     /// - `new_status`: El nuevo estado del usuario
     pub fn set_status(&mut self, new_status: UserStatus) {
         self.status = new_status;
     }
-    
+
     /// Regresa el identificador del usuario
     pub fn get_id(&self) -> usize {
         self.id
     }
-    
+
     /// Regresa el nombre del usuario
     pub fn get_username(&self) -> String {
         self.username.clone()
     }
-    
+
     /// Regresa el estado del usuario
     pub fn get_status(&self) -> UserStatus {
         self.status.clone()
