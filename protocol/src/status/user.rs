@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 ///
-/// Representa el estado de un usuario en el servidor.
+/// El status de un usuario en el chat.
 ///
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]

@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-///
-/// Posibles resultados de las operaciones que realiza el servidor
+/// Resultados de las operaciones que pide el cliente.
 ///
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -17,8 +16,7 @@ pub enum OperationResult {
     Invalid,
 }
 
-///
-/// Operaciones que realiza el servidor a petición de un cliente
+/// Operaciones que el cliente pide al servidor.
 ///
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
