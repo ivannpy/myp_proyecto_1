@@ -19,9 +19,6 @@ impl LocalUser {
     pub fn set_connected(&mut self, connected: bool) {
         self.connected = connected;
     }
-    pub fn is_connected(&self) -> bool {
-        self.connected
-    }
     pub fn get_username(&self) -> &str {
         &self.username
     }
@@ -29,9 +26,6 @@ impl LocalUser {
         self.username = username;
     }
 
-    pub fn get_status(&self) -> &UserStatus {
-        &self.status
-    }
     pub fn set_status(&mut self, status: UserStatus) {
         self.status = status;
     }
@@ -54,8 +48,5 @@ impl RemoteUser {
     }
     pub fn set_status(&mut self, status: UserStatus) {
         self.status = status;
-    }
-    pub fn set_username(&mut self, username: String) {
-        self.username = username;
     }
 }

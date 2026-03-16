@@ -113,14 +113,6 @@ impl ChatModel {
         self.remote_users.clear();
     }
 
-    pub fn get_messages(&self) -> &Vec<ChatMessage> {
-        &self.messages
-    }
-
-    pub fn clean_messages(&mut self) {
-        self.messages.clear();
-    }
-    
     pub fn set_local_username(&mut self, username: &str) {
         self.local_user.set_username(username.to_string());
     }

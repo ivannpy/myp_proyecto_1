@@ -1,3 +1,4 @@
+use crate::client_error::ClientError;
 use crate::controller::chat_controller::ChatController;
 use crate::network_connection::NetworkReader;
 use crate::view::console_view::ConsoleView;
@@ -5,7 +6,6 @@ use protocol::status::user::UserStatus;
 use std::io::{BufRead, Write};
 use std::sync::{Arc, Mutex};
 use std::{io, thread};
-use crate::client_error::ClientError;
 
 pub struct App {
     controller: Arc<Mutex<ChatController<ConsoleView>>>,
@@ -50,15 +50,13 @@ impl App {
         println!("Username capturado {}", username);
 
         match self.controller.lock() {
-            Ok(mut ctrl) => {
-                match ctrl.identify(username, reader) {
-                    Ok(_) => {
-                        println!("Identificación correcta");
-                        Ok(())
-                    }
-                    Err(_) => Err(ClientError::InvalidUsername),
+            Ok(mut ctrl) => match ctrl.identify(username, reader) {
+                Ok(_) => {
+                    println!("Identificación correcta");
+                    Ok(())
                 }
-            }
+                Err(_) => Err(ClientError::ConnectionError),
+            },
             Err(_) => Err(ClientError::ConnectionError),
         }
     }
@@ -170,6 +168,7 @@ fn user_interaction_loop(controller: Arc<Mutex<ChatController<ConsoleView>>>) {
     println!("  /leave <room>    - Abandonar cuarto");
     println!("  /invite <room> <user1>,<user2>,... - Invitar usuarios");
     println!("  /roomusers <room> - Usuarios en cuarto");
+    println!("  /room <room> <msg> - Mensaje a cuarto");
     println!("  /quit            - Salir");
     println!("  <texto>          - Mensaje público\n");
 
@@ -289,6 +288,15 @@ fn handle_command(controller: &Arc<Mutex<ChatController<ConsoleView>>>, command:
                 controller.lock().unwrap().request_room_users(roomname);
             } else {
                 println!("Uso: /roomusers <nombre_cuarto>");
+            }
+        }
+        Some(&"/room") => {
+            if parts.len() >= 3 {
+                let roomname = parts[1].to_string();
+                let text = parts[2..].join(" ");
+                controller.lock().unwrap().send_room_message(roomname, text);
+            } else {
+                println!("Uso: /room <nombre_cuarto> <mensaje>");
             }
         }
         Some(&"/quit") => {

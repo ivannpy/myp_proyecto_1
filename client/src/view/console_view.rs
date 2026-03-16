@@ -27,7 +27,11 @@ impl ChatView for ConsoleView {
     }
 
     fn update_user(&mut self, username: &str, user: &RemoteUser) {
-        println!("EL usuario {} actualizó su estado: {:?}", username, user.get_status());
+        println!(
+            "EL usuario {} actualizó su estado: {:?}",
+            username,
+            user.get_status()
+        );
     }
 
     fn add_user(&mut self, user: &RemoteUser) {
@@ -56,19 +60,7 @@ impl ChatView for ConsoleView {
                 text,
                 ..
             } => {
-                println!("[{} en {}] {}", from ,roomname, text);
-            }
-            ChatMessage::System { text, .. } => {
-                println!("[Sistema] {}", text);
-            }
-        }
-    }
-
-    fn update_room_list(&mut self, rooms: &HashMap<String, RemoteRoom>) {
-        println!("=== Lista de cuartos disponibles ===");
-        for (roomname, room) in rooms {
-            if room.get_is_joined() {
-                println!("  {} ({:?})", roomname, room.get_is_joined());
+                println!("[{} en {}] {}", from, roomname, text);
             }
         }
     }

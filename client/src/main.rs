@@ -1,9 +1,9 @@
 mod app;
+mod client_error;
 mod controller;
 mod model;
 mod network_connection;
 mod view;
-mod client_error;
 
 use crate::app::App;
 use crate::view::console_view::ConsoleView;

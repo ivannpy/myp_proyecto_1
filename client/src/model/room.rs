@@ -38,9 +38,7 @@ impl RemoteRoom {
     pub fn remove_user(&mut self, username: &str) {
         self.users.remove(username);
     }
-    pub fn is_in(&self, username: &str) -> bool {
-        self.users.contains_key(username)
-    }
+
     pub fn get_is_invited(&self) -> bool {
         self.is_invited
     }
@@ -48,9 +46,8 @@ impl RemoteRoom {
     pub fn get_is_joined(&self) -> bool {
         self.is_joined
     }
-    
+
     pub fn get_roomname(&self) -> &String {
         &self.roomname
     }
-    
 }
