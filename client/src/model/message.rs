@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub enum ChatMessage {
     Private {
         from: String,
@@ -11,7 +12,7 @@ pub enum ChatMessage {
         timestamp: String,
     },
     Room {
-        room_name: String,
+        roomname: String,
         from: String,
         text: String,
         timestamp: String,

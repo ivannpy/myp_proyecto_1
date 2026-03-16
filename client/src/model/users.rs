@@ -1,10 +1,12 @@
 use protocol::status::user::UserStatus;
 
+#[derive(Debug, Clone)]
 pub struct LocalUser {
     username: String,
     status: UserStatus,
     connected: bool,
 }
+
 impl LocalUser {
     pub fn new(username: String, status: UserStatus) -> Self {
         Self {
@@ -35,6 +37,7 @@ impl LocalUser {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct RemoteUser {
     username: String,
     status: UserStatus,

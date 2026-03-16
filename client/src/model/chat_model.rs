@@ -5,6 +5,7 @@ use crate::model::users::{LocalUser, RemoteUser};
 use protocol::status::user::UserStatus;
 use std::collections::HashMap;
 
+#[derive(Debug, Clone)]
 pub struct ChatModel {
     local_user: LocalUser,
     remote_users: HashMap<String, RemoteUser>,
@@ -14,9 +15,9 @@ pub struct ChatModel {
 }
 
 impl ChatModel {
-    pub fn new(local_user: LocalUser) -> Self {
+    pub fn new() -> Self {
         Self {
-            local_user,
+            local_user: LocalUser::new(String::from(""), UserStatus::Active),
             remote_users: HashMap::new(),
             rooms: HashMap::new(),
             messages: Vec::new(),
@@ -37,6 +38,14 @@ impl ChatModel {
         if let Some(user) = self.remote_users.get_mut(username) {
             user.set_status(status);
         }
+    }
+
+    pub fn update_local_user_status(&mut self, status: UserStatus) {
+        self.local_user.set_status(status);
+    }
+
+    pub fn update_local_user_connected(&mut self, connected: bool) {
+        self.local_user.set_connected(connected);
     }
 
     pub fn add_message(&mut self, message: ChatMessage) {
@@ -74,5 +83,45 @@ impl ChatModel {
         if let Some(room) = self.rooms.get_mut(roomname) {
             room.remove_user(username);
         }
+    }
+
+    pub fn get_connection_state(&self) -> ConnectionState {
+        self.connection_state.clone()
+    }
+
+    pub fn set_connection_state(&mut self, state: ConnectionState) {
+        self.connection_state = state;
+    }
+
+    pub fn get_local_user(&self) -> &LocalUser {
+        &self.local_user
+    }
+
+    pub fn get_remote_users(&self) -> &HashMap<String, RemoteUser> {
+        &self.remote_users
+    }
+
+    pub fn get_rooms(&self) -> &HashMap<String, RemoteRoom> {
+        &self.rooms
+    }
+
+    pub fn get_rooms_mut(&mut self) -> Option<&mut HashMap<String, RemoteRoom>> {
+        Some(&mut self.rooms)
+    }
+
+    pub fn clean_remote_users(&mut self) {
+        self.remote_users.clear();
+    }
+
+    pub fn get_messages(&self) -> &Vec<ChatMessage> {
+        &self.messages
+    }
+
+    pub fn clean_messages(&mut self) {
+        self.messages.clear();
+    }
+    
+    pub fn set_local_username(&mut self, username: &str) {
+        self.local_user.set_username(username.to_string());
     }
 }

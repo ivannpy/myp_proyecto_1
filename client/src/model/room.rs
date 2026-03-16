@@ -1,17 +1,18 @@
 use protocol::status::user::UserStatus;
 use std::collections::HashMap;
 
+#[derive(Debug, Clone)]
 pub struct RemoteRoom {
-    room_name: String,
+    roomname: String,
     users: HashMap<String, UserStatus>,
     is_invited: bool,
     is_joined: bool,
 }
 
 impl RemoteRoom {
-    pub fn new(room_name: String, is_invited: bool, is_joined: bool) -> Self {
+    pub fn new(roomname: String, is_invited: bool, is_joined: bool) -> Self {
         Self {
-            room_name,
+            roomname,
             users: HashMap::new(),
             is_invited,
             is_joined,
@@ -40,4 +41,16 @@ impl RemoteRoom {
     pub fn is_in(&self, username: &str) -> bool {
         self.users.contains_key(username)
     }
+    pub fn get_is_invited(&self) -> bool {
+        self.is_invited
+    }
+
+    pub fn get_is_joined(&self) -> bool {
+        self.is_joined
+    }
+    
+    pub fn get_roomname(&self) -> &String {
+        &self.roomname
+    }
+    
 }
