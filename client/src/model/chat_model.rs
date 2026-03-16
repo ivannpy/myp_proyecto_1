@@ -5,7 +5,7 @@ use crate::model::users::{LocalUser, RemoteUser};
 use protocol::status::user::UserStatus;
 use std::collections::HashMap;
 
-pub struct Chat {
+pub struct ChatModel {
     local_user: LocalUser,
     remote_users: HashMap<String, RemoteUser>,
     rooms: HashMap<String, RemoteRoom>,
@@ -13,7 +13,7 @@ pub struct Chat {
     connection_state: ConnectionState,
 }
 
-impl Chat {
+impl ChatModel {
     pub fn new(local_user: LocalUser) -> Self {
         Self {
             local_user,

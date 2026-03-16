@@ -3,7 +3,7 @@ use crate::model::room::{Room, validate_room_name};
 use crate::model::server_state::ServerState;
 use crate::model::user::{User, validate_username};
 use protocol::messages::client_message::ClientMessage;
-use protocol::messages::responses::{Operation, Result};
+use protocol::messages::responses::{Operation, OperationResult};
 use protocol::messages::server_message::ServerMessage;
 use protocol::status::user::UserStatus;
 use std::collections::HashMap;
@@ -111,7 +111,7 @@ impl ClientHandler {
         } else {
             let reply = ClientMessage::Response {
                 operation: Operation::Invalid,
-                result: Result::NotIdentified,
+                result: OperationResult::NotIdentified,
                 extra: None,
             };
             self.reply_to_client(&reply);
@@ -457,7 +457,7 @@ impl ClientHandler {
         if user_exists {
             reply = ClientMessage::Response {
                 operation: Operation::Identify,
-                result: Result::UserAlreadyExists,
+                result: OperationResult::UserAlreadyExists,
                 extra: Some(username.to_string()),
             };
             self.reply_to_client(&reply);
@@ -476,7 +476,7 @@ impl ClientHandler {
 
         reply = ClientMessage::Response {
             operation: Operation::Identify,
-            result: Result::Success,
+            result: OperationResult::Success,
             extra: Some(username.to_string()),
         };
         self.reply_to_client(&reply);
@@ -544,7 +544,7 @@ impl ClientHandler {
         if !user_exists {
             reply = ClientMessage::Response {
                 operation: Operation::Text,
-                result: Result::NoSuchUser,
+                result: OperationResult::NoSuchUser,
                 extra: Some(username_to.to_string()),
             };
             self.reply_to_client(&reply);
@@ -595,7 +595,7 @@ impl ClientHandler {
         if room_exists {
             reply = ClientMessage::Response {
                 operation: Operation::NewRoom,
-                result: Result::RoomAlreadyExists,
+                result: OperationResult::RoomAlreadyExists,
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
@@ -607,7 +607,7 @@ impl ClientHandler {
         self.add_new_room(&username, &roomname);
         reply = ClientMessage::Response {
             operation: Operation::NewRoom,
-            result: Result::Success,
+            result: OperationResult::Success,
             extra: Some(roomname.to_string()),
         };
         self.reply_to_client(&reply);
@@ -633,7 +633,7 @@ impl ClientHandler {
         if !self.verify_room_exists(&roomname) {
             reply = ClientMessage::Response {
                 operation: Operation::Invite,
-                result: Result::NoSuchRoom,
+                result: OperationResult::NoSuchRoom,
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
@@ -662,14 +662,17 @@ impl ClientHandler {
         for user_not_exist in users_not_exist {
             reply = ClientMessage::Response {
                 operation: Operation::Invite,
-                result: Result::NoSuchUser,
+                result: OperationResult::NoSuchUser,
                 extra: Some(user_not_exist),
             };
             self.reply_to_client(&reply);
         }
 
         // Agregarlos a la lista de invitados del cuarto
-        self.invite_to_room(&username, &roomname);
+        // Agregarlos a la lista de invitados del cuarto
+        for user_to_invite in &users_to_invite {
+            self.invite_to_room(user_to_invite, &roomname);
+        }
 
         // Enviar invitación a usuarios existentes que no están en el cuarto
         reply = ClientMessage::Invitation {
@@ -695,7 +698,7 @@ impl ClientHandler {
         if !room_exists {
             reply = ClientMessage::Response {
                 operation: Operation::JoinRoom,
-                result: Result::NoSuchRoom,
+                result: OperationResult::NoSuchRoom,
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
@@ -709,7 +712,7 @@ impl ClientHandler {
         if !is_invited {
             reply = ClientMessage::Response {
                 operation: Operation::JoinRoom,
-                result: Result::NotInvited,
+                result: OperationResult::NotInvited,
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
@@ -720,7 +723,7 @@ impl ClientHandler {
 
         reply = ClientMessage::Response {
             operation: Operation::JoinRoom,
-            result: Result::Success,
+            result: OperationResult::Success,
             extra: Some(roomname.to_string()),
         };
         self.reply_to_client(&reply);
@@ -752,7 +755,7 @@ impl ClientHandler {
         if !room_exists {
             reply = ClientMessage::Response {
                 operation: Operation::RoomUsers,
-                result: Result::NoSuchRoom,
+                result: OperationResult::NoSuchRoom,
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
@@ -765,7 +768,7 @@ impl ClientHandler {
         if !user_in_room {
             reply = ClientMessage::Response {
                 operation: Operation::RoomUsers,
-                result: Result::NotJoined,
+                result: OperationResult::NotJoined,
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
@@ -793,7 +796,7 @@ impl ClientHandler {
         if !room_exists {
             let reply = ClientMessage::Response {
                 operation: Operation::RoomText,
-                result: Result::NoSuchRoom,
+                result: OperationResult::NoSuchRoom,
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
@@ -807,7 +810,7 @@ impl ClientHandler {
         if !user_in_room {
             let reply = ClientMessage::Response {
                 operation: Operation::RoomText,
-                result: Result::NotJoined,
+                result: OperationResult::NotJoined,
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
@@ -839,7 +842,7 @@ impl ClientHandler {
         if !room_exists {
             reply = ClientMessage::Response {
                 operation: Operation::LeaveRoom,
-                result: Result::NoSuchRoom,
+                result: OperationResult::NoSuchRoom,
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
@@ -853,7 +856,7 @@ impl ClientHandler {
         if !user_in_room {
             reply = ClientMessage::Response {
                 operation: Operation::LeaveRoom,
-                result: Result::NotJoined,
+                result: OperationResult::NotJoined,
                 extra: Some(roomname.to_string()),
             };
             self.reply_to_client(&reply);
@@ -864,9 +867,12 @@ impl ClientHandler {
         // Avisar a los demás
         let alert = ClientMessage::LeftRoom {
             roomname: roomname.to_string(),
-            username,
+            username: username.to_string(),
         };
         self.send_to_room(&roomname, &alert);
+        
+        self.delete_user_from_room(&username, &roomname);
+
     }
 
     ///
