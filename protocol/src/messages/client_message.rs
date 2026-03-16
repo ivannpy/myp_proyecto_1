@@ -1,4 +1,4 @@
-use crate::messages::responses::{Operation, Result};
+use crate::messages::responses::{Operation, OperationResult};
 use crate::status::user::UserStatus;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ use std::collections::HashMap;
 pub enum ClientMessage {
     Response {
         operation: Operation,
-        result: Result,
+        result: OperationResult,
         extra: Option<String>,
     },
     NewUser {

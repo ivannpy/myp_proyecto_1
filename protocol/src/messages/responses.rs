@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 ///
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Result {
+pub enum OperationResult {
     Success,
     UserAlreadyExists,
     NoSuchUser,
