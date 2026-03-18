@@ -30,9 +30,7 @@ fn get_port() -> u16 {
     }
 }
 
-///
 /// Punto de entrada del servidor
-///
 fn main() {
     let port: u16 = get_port();
 
