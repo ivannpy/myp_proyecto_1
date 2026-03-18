@@ -19,7 +19,7 @@ COPY protocol/ ./protocol/
 COPY server/ ./server/
 
 # Contruimos el binario en el contenedor en modo release
-RUN cargo build --release --bin server
+RUN cargo build --release --bin server --package server
 
 # Ejecución sobre Debian solo con lo necesario
 FROM debian:bookworm-slim
