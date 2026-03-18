@@ -12,14 +12,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copiamos archivos de dependencias y versiones al contenedor
-COPY Cargo.toml Cargo.lock ./
+RUN echo '[workspace]\nmembers = ["protocol", "server"]\nresolver = "3"' > Cargo.toml
+COPY Cargo.lock ./
 
 # Copiamos código fuente al contenedor
 COPY protocol/ ./protocol/
 COPY server/ ./server/
 
 # Contruimos el binario en el contenedor en modo release
-RUN cargo build --release --bin server --package server
+RUN cargo build --release --bin server
 
 # Ejecución sobre Debian solo con lo necesario
 FROM debian:bookworm-slim
