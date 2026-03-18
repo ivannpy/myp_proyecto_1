@@ -8,8 +8,10 @@ mod view;
 use crate::app::App;
 use crate::view::console_view::ConsoleView;
 
+/// Punto de entrada de la aplicación del lado del cliente.
 fn main() {
-    println!("=== Iniciando app ===");
     let mut app = App::new(ConsoleView::new());
-    app.run();
+    if app.run().is_err() {
+        eprintln!("Error al ejecutar la aplicación")
+    }
 }

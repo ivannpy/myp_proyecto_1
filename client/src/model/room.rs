@@ -1,6 +1,12 @@
 use protocol::status::user::UserStatus;
 use std::collections::HashMap;
 
+/// Un cuarto en el chat
+///
+/// - `roomname`: El nombre del cuarto
+/// - `user`: Los nombres y estados de los miembros del cuarto.
+/// - `is_invited`: Si el usuario local está invitado al cuarto
+/// - `is_joined`: Si el usuario local está en el cuarto.
 #[derive(Debug, Clone)]
 pub struct RemoteRoom {
     roomname: String,
@@ -10,6 +16,7 @@ pub struct RemoteRoom {
 }
 
 impl RemoteRoom {
+    /// Crea un nuevo cuarto
     pub fn new(roomname: String, is_invited: bool, is_joined: bool) -> Self {
         Self {
             roomname,
@@ -18,6 +25,7 @@ impl RemoteRoom {
             is_joined,
         }
     }
+
     pub fn set_is_invited(&mut self, is_invited: bool) {
         self.is_invited = is_invited;
     }
@@ -35,6 +43,7 @@ impl RemoteRoom {
     pub fn add_new_user(&mut self, username: String, status: UserStatus) {
         self.users.insert(username, status);
     }
+
     pub fn remove_user(&mut self, username: &str) {
         self.users.remove(username);
     }
