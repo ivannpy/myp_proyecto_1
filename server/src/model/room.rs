@@ -65,7 +65,6 @@ impl Room {
     pub fn get_users_ids(&self) -> Vec<usize> {
         self.users.keys().cloned().collect::<Vec<usize>>()
     }
-    
 
     /// Verifica si un usuario está en la lista de invitados
     ///
