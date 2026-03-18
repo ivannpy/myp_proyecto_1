@@ -126,7 +126,7 @@ Crea un cuarto en el chat:
 
 ```
 { "type": "NEW_ROOM",
-  "roomname": "Sala 1" }
+  "_roomname": "Sala 1" }
 ```
 
 Si el cuarto se crea exitosamente el servidor responde:
@@ -157,7 +157,7 @@ pueden invitar a otros usuarios a ese cuarto:
 
 ```
 { "type": "INVITE",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "usernames": [ "Luis", "Antonio", "Fernando" ] }
 ```
 
@@ -167,7 +167,7 @@ responde nada y envía el mensaje `INVITATION` a cada usuario en la lista:
 ```
 { "type": "INVITATION",
   "username" "Kimberly",
-  "roomname": "Sala 1" }
+  "_roomname": "Sala 1" }
 ```
 
 Si el cuarto no existe, el servidor responde:
@@ -199,7 +199,7 @@ poder unirse:
 
 ```
 { "type": "JOIN_ROOM",
-  "roomname": "Sala 1" }
+  "_roomname": "Sala 1" }
 ```
 
 Si el cuarto existe y el usuario fue invitado previamente al mismo, el servidor
@@ -217,7 +217,7 @@ a todos los usuarios en el cuarto:
 
 ```
 { "type": "JOINED_ROOM",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "username": "Fernando" }
 ```
 
@@ -243,7 +243,7 @@ Si el usuario no fue invitado previamente al cuarto, el servidor responde:
 
 ```
 { "type": "ROOM_USERS",
-  "roomname": "Sala 1" }
+  "_roomname": "Sala 1" }
 ```
 
 Si el cuarto existe y el usuario se ha unido al mismo, el servidor responde con
@@ -251,7 +251,7 @@ un diccionario con los usuarios y su estado:
 
 ```
 { "type": "ROOM_USER_LIST",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "users": { "Kimberly": "ACTIVE",
              "Luis": "AWAY",
              "Antonio": "BUSY",
@@ -283,7 +283,7 @@ Manda un text a un cuarto.
 
 ```
 { "type": "ROOM_TEXT",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "text": "¡Hola sala 1!" }
 ```
 
@@ -293,7 +293,7 @@ cuarto:
 
 ```
 { "type": "ROOM_TEXT_FROM",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "username": "Kimberly",
   "text": "¡Hola sala 1!" }
 ```
@@ -323,7 +323,7 @@ El usuario abandona un cuarto:
 
 ```
 { "type": "LEAVE_ROOM",
-  "roomname": "Sala 1" }
+  "_roomname": "Sala 1" }
 ```
 
 Si el cuarto existe y el usuario se ha unido al mismo, el servidor no responde
@@ -331,7 +331,7 @@ nada y envía el mensaje `LEFT_ROOM` a los demás usuarios en el cuarto:
 
 ```
 { "type": "LEFT_ROOM",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "username": "Fernando" }
 ```
 
@@ -376,7 +376,7 @@ cada cuarto:
 
 ```
 { "type": "LEFT_ROOM",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "username": "Fernando" }
 ```
 
@@ -440,7 +440,7 @@ Un nuevo usuario se unió a un cuarto:
 
 ```
 { "type": "JOINED_ROOM",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "username": "Fernando" }
 ```
 
@@ -450,7 +450,7 @@ En respuesta a `ROOM_USERS`
 
 ```
 { "type": "ROOM_USER_LIST",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "users": { "Kimberly": "ACTIVE",
              "Luis": "AWAY",
              "Antonio": "BUSY",
@@ -463,7 +463,7 @@ Recibe un texto en un cuarto:
 
 ```
 { "type": "ROOM_TEXT_FROM",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "username": "Kimberly",
   "text": "¡Bienvenidos a mi sala!" }
 ```
@@ -474,7 +474,7 @@ Un usuario abandonó un cuarto:
 
 ```
 { "type": "LEFT_ROOM",
-  "roomname": "Sala 1",
+  "_roomname": "Sala 1",
   "username": "Fernando" }
 ```
 
