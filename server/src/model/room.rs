@@ -15,7 +15,6 @@ pub fn validate_room_name(room: &str) -> bool {
 /// - `invited`: Conjunto de usuarios invitados al cuarto
 pub struct Room {
     users: HashMap<usize, String>,
-    room_name: String,
     invited: HashSet<String>,
 }
 
@@ -23,10 +22,9 @@ impl Room {
     /// Construye un nuevo cuarto con el nombre dado.
     ///
     /// Inicialmente el cuarto no tiene usuarios ni invitados
-    pub fn new(room_name: String) -> Self {
+    pub fn new() -> Self {
         Self {
             users: HashMap::new(),
-            room_name,
             invited: HashSet::new(),
         }
     }
@@ -44,8 +42,8 @@ impl Room {
     ///
     /// - `username`: El nombre del usuario que se agregará al cuarto.
     /// - `id`: El identificador único del usuario que se agregará al cuarto.
-    pub fn add_user(&mut self, username: &str, id: &usize) {
-        self.users.insert(*id, username.to_string());
+    pub fn add_user(&mut self, username: &str, id: usize) {
+        self.users.insert(id, username.to_string());
     }
 
     /// Elimina a un usuario del cuarto
@@ -54,8 +52,8 @@ impl Room {
     ///
     /// Regresa true si el usuario fue eliminado con éxito,
     /// false si el usuario no estaba en el cuarto.
-    pub fn remove_user(&mut self, id: &usize) -> bool {
-        self.users.remove(id).is_some()
+    pub fn remove_user(&mut self, id: usize) -> bool {
+        self.users.remove(&id).is_some()
     }
 
     /// Regresa un diccionario con los usuarios del cuarto.
@@ -63,10 +61,11 @@ impl Room {
         self.users.clone()
     }
 
-    /// Regresa el nombre del cuarto.
-    pub fn get_room_name(&self) -> String {
-        self.room_name.clone()
+    /// Regresa un vector con los identificadores de los usuarios del cuarto.
+    pub fn get_users_ids(&self) -> Vec<usize> {
+        self.users.keys().cloned().collect::<Vec<usize>>()
     }
+    
 
     /// Verifica si un usuario está en la lista de invitados
     ///

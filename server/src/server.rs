@@ -1,6 +1,7 @@
-use crate::broadcaster::Broadcaster;
-use crate::handlers::{ClientHandler, handle_input_from_client, handle_output_to_client};
+use crate::handlers::ClientHandler;
+use crate::model::broadcaster::Broadcaster;
 use crate::model::server_state::ServerState;
+use crate::network_connection::{ServerNetworkReader, ServerNetworkWriter};
 use protocol::messages::client_message::ClientMessage;
 use std::io::{BufReader, BufWriter};
 use std::net::{SocketAddr, TcpListener};
@@ -75,7 +76,7 @@ impl Server {
                             println!("\tPuerto: {:?}", reader.get_ref().peer_addr()?.port());
 
                             let _ = match self.broadcaster.lock() {
-                                Ok(mut broadcaster) => broadcaster.add_client(&id, sender.clone()),
+                                Ok(mut broadcaster) => broadcaster.add_client(id, sender.clone()),
                                 Err(_) => {
                                     eprintln!("Error al agregar cliente al broadcaster");
                                     continue;
@@ -84,19 +85,21 @@ impl Server {
 
                             // Manejar mensajes desde el cliente
                             let handler = ClientHandler::new(id, state, broadcaster);
-                            thread::spawn(move || handle_input_from_client(reader, handler));
+                            let mut server_reader = ServerNetworkReader::new(reader, handler);
+                            thread::spawn(move || server_reader.handle_input_from_client());
 
                             // Manejar mensajes hacia el cliente
-                            thread::spawn(move || handle_output_to_client(writer, receiver));
+                            let mut server_writer = ServerNetworkWriter::new(writer, receiver);
+                            thread::spawn(move || server_writer.handle_output_to_client());
                         }
                         Err(e) => {
-                            eprintln!("Error clonando socket: {}", e);
+                            println!("Error clonando socket: {}", e);
                             continue;
                         }
                     }
                 }
                 _ => {
-                    eprintln!("Error al aceptar conexión");
+                    println!("Error al aceptar conexión");
                     continue;
                 }
             }

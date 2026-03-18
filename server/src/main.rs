@@ -1,11 +1,16 @@
-mod broadcaster;
 mod handlers;
 mod model;
+mod network_connection;
+pub mod server;
 
-use model::server::Server;
+use server::Server;
 use std::env;
 use std::process;
 
+/// Obtiene el puerto del servidor desde los argumentos de línea de comandos
+/// o usa el puerto 1234 por defecto.
+///
+/// Regresa el puerto del servidor
 fn get_port() -> u16 {
     let args: Vec<String> = env::args().collect();
     if args.len() == 1 {

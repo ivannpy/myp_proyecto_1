@@ -29,6 +29,11 @@ impl User {
         }
     }
 
+    /// Regresa el estado del usuario
+    pub fn get_status(&self) -> UserStatus {
+        self.status.clone()
+    }
+
     /// Establece el estado del usuario
     ///
     /// - `new_status`: El nuevo estado del usuario
@@ -44,11 +49,6 @@ impl User {
     /// Regresa el nombre del usuario
     pub fn get_username(&self) -> String {
         self.username.clone()
-    }
-
-    /// Regresa el estado del usuario
-    pub fn get_status(&self) -> UserStatus {
-        self.status.clone()
     }
 }
 
