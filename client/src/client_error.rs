@@ -1,4 +1,5 @@
 /// Errores que pueden ocurrir en el cliente
+#[derive(Debug)]
 pub enum ClientError {
     ConnectionError,
 }

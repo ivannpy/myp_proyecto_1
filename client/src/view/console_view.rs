@@ -28,7 +28,7 @@ impl ConsoleView {
     ///
     /// - `text`: El texto a escribir
     fn write_to_stdout(&mut self, text: String) {
-        print!("{}", text);
+        println!("{}", text);
         io::stdout().flush().unwrap();
     }
 
@@ -131,7 +131,6 @@ impl ChatView for ConsoleView {
         self.show_in_screen("Ingresa tu nombre de usuario:".to_string());
         loop {
             username.clear();
-            self.show_in_screen(">".to_string());
             match io::stdin().read_line(&mut username) {
                 Ok(_) => {
                     if username.trim().is_empty() {
@@ -158,7 +157,6 @@ impl ChatView for ConsoleView {
 
         loop {
             addr.clear();
-            self.show_in_screen(">".to_string());
             addr = self.read_from_stdin();
             if addr.is_empty() {
                 self.show_in_screen("No puede estar vacío.".to_string());
@@ -172,7 +170,6 @@ impl ChatView for ConsoleView {
 
         loop {
             port.clear();
-            self.show_in_screen(">".to_string());
             port = self.read_from_stdin();
             if port.is_empty() {
                 self.show_in_screen("No puede estar vacío.".to_string());

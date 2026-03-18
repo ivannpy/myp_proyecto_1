@@ -1,4 +1,3 @@
-
 /// Tipos de mensajes en el chat
 #[derive(Debug, Clone)]
 pub enum ChatMessage {
