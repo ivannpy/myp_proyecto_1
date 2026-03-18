@@ -7,7 +7,7 @@ set -e
 
 PORT=${1:-1234}
 CONTAINER_NAME="rust-server-prod"
-IMAGE_NAME=${2:-"ivannpy/rust-server:latest"}
+IMAGE_NAME=${2:-"ivannpyc/rust-server:latest"}
 
 # Limpiar contenedor existente si existe alguno
 docker stop $CONTAINER_NAME 2>/dev/null || true

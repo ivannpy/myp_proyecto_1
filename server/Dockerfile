@@ -46,12 +46,11 @@ RUN chown -R appuser:appuser /app
 # Cambiamos de usuario
 USER appuser
 
-ENV SERVER_PORT=1234
-EXPOSE $SERVER_PORT
+EXPOSE 1234
 
 # Chequeo de salud del contenedor
 HEALTHCHECK --interval=160s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:$SERVER_PORT/health || exit 1
+    CMD curl -f http://localhost:${SERVER_PORT:1234}/health || exit 1
 
 # Ejecutar el binario
-CMD ["sh", "-c", "./server $SERVER_PORT"]
+CMD ["sh", "-c", "./server ${SERVER_PORT:-1234}"]

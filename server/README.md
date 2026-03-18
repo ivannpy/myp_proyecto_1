@@ -14,8 +14,8 @@ docker logs rust-server
 
 __Construir la imagen y subirla a DockerHub__
 
-docker build -f server/Dockerfile -t ivannpy/rust-server:latest .
-docker push ivannpy/rust-server:latest
+docker build -f server/Dockerfile -t ivannpyc/rust-server:latest .
+docker push ivannpyc/rust-server:latest
 
 __Ejecutarla desde el servidor__
 
