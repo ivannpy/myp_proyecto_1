@@ -87,6 +87,10 @@ impl ClientHandler {
     ///
     /// - `alert`: Mensaje a enviar a los demás clientes
     fn alert_to_others(&self, alert: &ClientMessage) {
+        if !self.username.clone().is_some() {
+            return;
+        }
+
         match self.broadcaster.lock() {
             Ok(b) => {
                 b.send_message_to_all_except(self.id, alert);
