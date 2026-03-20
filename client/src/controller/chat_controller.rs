@@ -559,13 +559,12 @@ pub fn user_interaction_loop(controller: Arc<Mutex<ChatController<ConsoleView>>>
             break;
         }
 
-        // Esperar un poco antes de verificar de nuevo
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
 
-    println!("\n=== Chat Client ===");
+    println!("\n=== Aplicación Chat ===");
     println!("Comandos disponibles:");
-    println!("  <texto>          - Mensaje público\n");
+    println!("  <texto>          - Mensaje público");
     println!("  /users           - Lista de usuarios");
     println!("  /status <status>  - Cambiar estado (ACTIVE|AWAY|BUSY)");
     println!("  /pm <user> <msg>  - Mensaje privado");
@@ -573,7 +572,7 @@ pub fn user_interaction_loop(controller: Arc<Mutex<ChatController<ConsoleView>>>
     println!("  /create <room>   - Crear cuarto");
     println!("  /join <room>     - Unirse a cuarto");
     println!("  /leave <room>    - Abandonar cuarto");
-    println!("  /invite <room> <user1>,<user2>,... - Invitar usuarios");
+    println!("  /invite <room> <user1>,<user2>,... - Invitar usuarios al cuarto");
     println!("  /roomusers <room> - Usuarios en cuarto");
     println!("  /room <room> <msg> - Mensaje a cuarto");
     println!("  /quit            - Salir");
@@ -610,6 +609,10 @@ pub fn user_interaction_loop(controller: Arc<Mutex<ChatController<ConsoleView>>>
     }
 }
 
+/// Maneja los posibles comandos escritos por el usuario
+///
+/// - `controller`:
+/// - `command`: El comando escrito
 fn handle_command(controller: &Arc<Mutex<ChatController<ConsoleView>>>, command: &str) {
     let parts: Vec<&str> = command.split_whitespace().collect();
 
