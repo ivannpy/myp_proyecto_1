@@ -77,9 +77,12 @@ impl ServerNetworkWriter {
                 Ok(mut msg_str) => {
                     msg_str.push('\n');
                     println!(">>> {}", msg_str);
+
+                    let mut msg_bytes = msg_str.into_bytes();
+                    msg_bytes.push(0x00);
                     if self
                         .writer
-                        .write_all(msg_str.as_bytes())
+                        .write_all(&msg_bytes)
                         .and_then(|_| self.writer.flush())
                         .is_err()
                     {
