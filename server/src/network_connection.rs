@@ -30,7 +30,7 @@ impl ServerNetworkReader {
                 Ok(0) => break,
                 Ok(_) => {
                     println!("Mensaje recibido: {:?}", line);
-                    let msg_str = line.trim();
+                    let msg_str = line.trim().trim_matches('\0');
                     println!("Mensaje recibido luego de string: {:?}", msg_str);
 
                     // Parsear linea a ServerMessage
@@ -80,9 +80,9 @@ impl ServerNetworkWriter {
             match serde_json::to_string(&msg) {
                 Ok(mut msg_str) => {
                     msg_str.push('\n');
+                    msg_str.push('\0');
 
                     println!(">>> {}", msg_str);
-                    // let msg_bytes = msg_str.into_bytes();
                     if self
                         .writer
                         .write_all(msg_str.as_bytes())
