@@ -1,7 +1,7 @@
 use crate::handlers::ClientHandler;
 use protocol::messages::client_message::ClientMessage;
 use protocol::messages::server_message::ServerMessage;
-use std::io::{BufReader, BufWriter, Read, Write};
+use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::net::TcpStream;
 use std::sync::mpsc;
 
@@ -22,33 +22,22 @@ impl ServerNetworkReader {
 
     /// Maneja la entrada de mensajes desde el cliente.
     pub fn handle_input_from_client(&mut self) {
-        let mut line_buffer = vec![0; 1024];
-
+        let mut line = String::new();
         loop {
-            line_buffer.clear();
-            println!("Esperando mensaje...");
+            line.clear();
 
-            match self.reader.read(&mut line_buffer) {
+            match self.reader.read_line(&mut line) {
                 Ok(0) => break,
-                Ok(n) => {
-                    println!("Mensaje recibido. Longitud {} ", n);
-                    // Buscamos el final de la linea ya sea un 0x00 o un \n
-                    let end_pos = line_buffer[..n]
-                        .iter()
-                        .position(|&b| b == b'\0' || b == b'\n')
-                        .unwrap_or(n);
-                    println!("Mensaje terminado en {}", end_pos);
+                Ok(_) => {
+                    println!("Mensaje recibido: {:?}", line);
+                    let msg_str = line.trim();
+                    println!("Mensaje recibido luego de string: {:?}", msg_str);
 
-                    // Leemos hasta el \0 o hasta el \n, lo que ocurra primero
-                    let msg_str = String::from_utf8_lossy(&line_buffer[..end_pos])
-                        .trim()
-                        .to_string();
-
-                    println!("<<< {}", msg_str);
-
-                    match serde_json::from_str::<ServerMessage>(msg_str.as_str()) {
+                    // Parsear linea a ServerMessage
+                    match serde_json::from_str::<ServerMessage>(msg_str) {
                         Ok(msg) => {
-                            println!("Mensaje recibido: {:?}", msg);
+                            println!("Mensaje parseado: {:?}", msg);
+                            println!("<<< {}", msg_str);
                             self.handler.handle_message(msg);
                         }
                         Err(_) => println!("Error parseando mensaje de {}", self.handler.get_id()),
@@ -91,13 +80,12 @@ impl ServerNetworkWriter {
             match serde_json::to_string(&msg) {
                 Ok(mut msg_str) => {
                     msg_str.push('\n');
-                    msg_str.push('\0');
 
                     println!(">>> {}", msg_str);
-                    let msg_bytes = msg_str.into_bytes();
+                    // let msg_bytes = msg_str.into_bytes();
                     if self
                         .writer
-                        .write_all(&msg_bytes)
+                        .write_all(msg_str.as_bytes())
                         .and_then(|_| self.writer.flush())
                         .is_err()
                     {
