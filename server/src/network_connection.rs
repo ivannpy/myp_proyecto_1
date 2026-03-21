@@ -26,15 +26,18 @@ impl ServerNetworkReader {
 
         loop {
             line_buffer.clear();
+            println!("Esperando mensaje...");
 
             match self.reader.read(&mut line_buffer) {
                 Ok(0) => break,
                 Ok(n) => {
+                    println!("Mensaje recibido. Longitud {} ", n);
                     // Buscamos el final de la linea ya sea un 0x00 o un \n
                     let end_pos = line_buffer[..n]
                         .iter()
                         .position(|&b| b == b'\0' || b == b'\n')
                         .unwrap_or(n);
+                    println!("Mensaje terminado en {}", end_pos);
 
                     // Leemos hasta el \0 o hasta el \n, lo que ocurra primero
                     let msg_str = String::from_utf8_lossy(&line_buffer[..end_pos])
@@ -42,8 +45,10 @@ impl ServerNetworkReader {
                         .to_string();
 
                     println!("<<< {}", msg_str);
+
                     match serde_json::from_str::<ServerMessage>(msg_str.as_str()) {
                         Ok(msg) => {
+                            println!("Mensaje recibido: {:?}", msg);
                             self.handler.handle_message(msg);
                         }
                         Err(_) => println!("Error parseando mensaje de {}", self.handler.get_id()),
@@ -82,6 +87,7 @@ impl ServerNetworkWriter {
     /// Maneja la salida de mensajes al cliente.
     pub fn handle_output_to_client(&mut self) {
         while let Ok(msg) = self.receiver.recv() {
+            println!("Enviando mensaje: {:?}", msg);
             match serde_json::to_string(&msg) {
                 Ok(mut msg_str) => {
                     msg_str.push('\n');
