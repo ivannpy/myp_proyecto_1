@@ -1,7 +1,7 @@
 use crate::handlers::ClientHandler;
 use protocol::messages::client_message::ClientMessage;
 use protocol::messages::server_message::ServerMessage;
-use std::io::{BufRead, BufReader, BufWriter, Read, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpStream;
 use std::sync::mpsc;
 
@@ -29,14 +29,11 @@ impl ServerNetworkReader {
             match self.reader.read_line(&mut line) {
                 Ok(0) => break,
                 Ok(_) => {
-                    println!("Mensaje recibido: {:?}", line);
                     let msg_str = line.trim().trim_matches('\0');
-                    println!("Mensaje recibido luego de string: {:?}", msg_str);
 
                     // Parsear linea a ServerMessage
                     match serde_json::from_str::<ServerMessage>(msg_str) {
                         Ok(msg) => {
-                            println!("Mensaje parseado: {:?}", msg);
                             println!("<<< {}", msg_str);
                             self.handler.handle_message(msg);
                         }
@@ -76,7 +73,6 @@ impl ServerNetworkWriter {
     /// Maneja la salida de mensajes al cliente.
     pub fn handle_output_to_client(&mut self) {
         while let Ok(msg) = self.receiver.recv() {
-            println!("Enviando mensaje: {:?}", msg);
             match serde_json::to_string(&msg) {
                 Ok(mut msg_str) => {
                     msg_str.push('\n');
