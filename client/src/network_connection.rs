@@ -21,6 +21,7 @@ impl NetworkWriter {
         match msg {
             Ok(mut msg) => {
                 msg.push('\n');
+                msg.push('\0');
                 match self.writer.write_all(msg.as_bytes()) {
                     Ok(_) => {
                         self.writer
@@ -49,7 +50,7 @@ impl NetworkReader {
         let mut line = String::new();
         match self.reader.read_line(&mut line) {
             Ok(0) => Err(ClientError::ConnectionError),
-            Ok(_) => serde_json::from_str::<ClientMessage>(&line)
+            Ok(_) => serde_json::from_str::<ClientMessage>(line.trim().trim_matches('\0'))
                 .map_err(|_| ClientError::ConnectionError),
             Err(_) => Err(ClientError::ConnectionError),
         }
