@@ -16,7 +16,9 @@ La aplicación permite a múltiples usuarios intercambiar mensajes en tiempo rea
 El servidor se ejecuta localmente o en un entorno de producción y expone un punto de conexión al cliente.
 
 **URL de conexión desplegado**  
+
 host: chat.puapc.net
+
 puerto: 1234
 
 ## Requisitos
